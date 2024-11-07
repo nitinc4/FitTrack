@@ -4,50 +4,72 @@ import styled from 'styled-components';
 interface ProgressBarProps {
   value: number;
   max: number;
-  label: string;
   color?: string;
 }
 
 const ProgressContainer = styled.div`
-  margin: 8px 0;
+  position: relative;
+  width: 80px;
+  height: 80px;
 `;
 
-const ProgressLabel = styled.div`
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 4px;
-  font-size: 0.875rem;
-  color: white;
+const ProgressSVG = styled.svg`
+  transform: rotate(-90deg);
 `;
 
-const ProgressTrack = styled.div`
-  width: 100%;
-  height: 8px;
-  background-color: rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
-  overflow: hidden;
+const Background = styled.circle`
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.1);
 `;
 
-const ProgressFill = styled.div<{ progress: number; color?: string }>`
-  width: ${props => props.progress}%;
-  height: 100%;
-  background-color: ${props => props.color || '#C9E4CA'};
-  border-radius: 4px;
-  transition: width 0.3s ease;
+const Progress = styled.circle<{ progress: number; color?: string }>`
+  fill: none;
+  stroke: ${props => props.color || '#C9E4CA'};
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.5s ease-in-out;
 `;
 
-const ProgressBar: React.FC<ProgressBarProps> = ({ value, max, label, color }) => {
+const ValueText = styled.div`
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+`;
+
+const ProgressBar: React.FC<ProgressBarProps> = ({ value, max, color }) => {
+  const size = 80;
+  const strokeWidth = 8;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = radius * 2 * Math.PI;
   const progress = Math.min((value / max) * 100, 100);
+  const strokeDashoffset = circumference - (progress / 100) * circumference;
   
   return (
     <ProgressContainer>
-      <ProgressLabel>
-        <span>{label}</span>
-        <span>{value} / {max}</span>
-      </ProgressLabel>
-      <ProgressTrack>
-        <ProgressFill progress={progress} color={color} />
-      </ProgressTrack>
+      <ProgressSVG width={size} height={size}>
+        <Background
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          strokeWidth={strokeWidth}
+        />
+        <Progress
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          strokeWidth={strokeWidth}
+          progress={progress}
+          color={color}
+          style={{
+            strokeDasharray: `${circumference} ${circumference}`,
+            strokeDashoffset: strokeDashoffset
+          }}
+        />
+      </ProgressSVG>
+      <ValueText>{Math.round(progress)}%</ValueText>
     </ProgressContainer>
   );
 };
