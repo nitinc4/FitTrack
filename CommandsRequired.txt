@@ -1,0 +1,6 @@
+npm i style-components
+npm install lucide-react 
+
+For Meet:
+fnm use --install-if-missing 22
+fnm env --use-on-cd | Out-String | Invoke-Expression
