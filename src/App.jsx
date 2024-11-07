@@ -6,6 +6,9 @@ import DietPlan from './pages/DietPlan';
 import WorkoutPlan from './pages/WorkoutPlan';
 import ActivityMonitor from './pages/ActivityMonitor';
 import Community from './pages/Community';
+import DailyDetails from './pages/DailyDetails';
+import WeeklyDetails from './pages/WeeklyDetails';
+
 
 export default function App() {
   return (
@@ -16,7 +19,9 @@ export default function App() {
         <Route path="/diet" element={<DietPlan />} />
         <Route path="/workout" element={<WorkoutPlan />} />
         <Route path="/activity" element={<ActivityMonitor />} />
-        <Route path="/community" element={<Community />} />
+        <Route path="/Weekly" element={<WeeklyDetails />} />
+        <Route path="/daily" element={<DailyDetails />} />
+       <Route path="/community" element={<Community />} />
       </Routes>
     </Router>
   );
