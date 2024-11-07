@@ -1,5 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
+import { useNavigate } from 'react-router-dom';
 import ProgressBar from './ProgressBar';
 import { ChevronRight } from 'lucide-react';
 
@@ -12,6 +13,7 @@ interface ActivityCardProps {
     color?: string;
     icon?: React.ReactNode;
   }[];
+  linkTo: string;
 }
 
 const Card = styled.div`
@@ -80,9 +82,11 @@ const ChevronIcon = styled(ChevronRight)`
   }
 `;
 
-const ActivityCard: React.FC<ActivityCardProps> = ({ title, metrics }) => {
+const ActivityCard: React.FC<ActivityCardProps> = ({ title, metrics, linkTo }) => {
+  const navigate = useNavigate();
+
   return (
-    <Card>
+    <Card onClick={() => navigate(linkTo)}>
       <Title>
         {title}
         <ChevronIcon size={20} />

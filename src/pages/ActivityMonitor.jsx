@@ -4,6 +4,7 @@ import ActivityCard from '../components/ActivityCard';
 import { Activity, TrendingUp, Calendar, RefreshCw } from 'lucide-react';
 import styled from 'styled-components';
 
+
 const RefreshButton = styled.button`
   display: flex;
   align-items: center;
@@ -25,6 +26,20 @@ const RefreshButton = styled.button`
     transform: scale(0.95);
   }
 `;
+
+
+const Container = styled.div`
+  max-width: 1200px;
+  margin: 0 auto;
+`;
+
+const Card = styled.div`
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 1rem;
+  padding: 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+`;
+
 
 const HeaderSection = styled.div`
   display: flex;
@@ -101,7 +116,7 @@ export default function ActivityMonitor() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#C9E4CA] via-[#87BBA2] to-[#55828B]">
+      <div className="min-h-screen bg-gradient-to-br from-[#C9E4CA] via-[#87BBA2] to-[#55828B]">
       <Navbar />
       <div className="container mx-auto p-6">
         <div className="bg-white/90 rounded-lg shadow-xl p-6">
@@ -128,15 +143,18 @@ export default function ActivityMonitor() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <ActivityCard 
               title="Today's Activity" 
-              metrics={dailyMetrics} 
+              metrics={dailyMetrics}
+              linkTo="/daily" 
             />
             <ActivityCard 
               title="Weekly Summary" 
-              metrics={weeklyMetrics} 
+              metrics={weeklyMetrics}
+              linkTo="/weekly" 
             />
           </div>
         </div>
       </div>
     </div>
+    
   );
 }
