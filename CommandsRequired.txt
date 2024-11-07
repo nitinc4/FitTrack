@@ -1,5 +1,5 @@
 npm i style-components
-npm install lucide-react 
+npm install lucide-react  
 
 For Meet:
 fnm use --install-if-missing 22
