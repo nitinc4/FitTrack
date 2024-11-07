@@ -84,7 +84,7 @@ export default function DailyDetails() {
     { icon: <Activity size={24} />, label: 'Steps', value: 8432, max: 10000, color: '#C9E4CA' },
     { icon: <TrendingUp size={24} />, label: 'Calories', value: 420, max: 600, color: '#87BBA2' },
     { icon: <Calendar size={24} />, label: 'Active Minutes', value: 45, max: 60, color: '#364958' },
-    { icon: <Heart size={24} />, label: 'Avg Heart Rate', value: 72, max: 100, color: '#55828B' },
+    { icon: <Heart size={24} />, label: 'Avg Heart Rate', value: 72, max: 100, color: '#09949B' },
     { icon: <Clock size={24} />, label: 'Sleep Hours', value: 7, max: 8, color: '#3B6064' }
   ];
 
