@@ -72,7 +72,7 @@ export default function WeeklyDetails() {
   const navigate = useNavigate();
   const metrics = [
     { icon: <Activity size={24} />, label: 'Weekly Steps', value: 52145, max: 70000, color: '#C9E4CA' },
-    { icon: <TrendingUp size={24} />, label: 'Daily Average', value: 7449, max: 10000, color: '#87BBA2' },
+    { icon: <TrendingUp size={24} />, label: 'Daily Average', value: 8009, max: 10000, color: '#87BBA2' },
     { icon: <Calendar size={24} />, label: 'Active Days', value: 5, max: 7, color: '#364958' },
     { icon: <Award size={24} />, label: 'Achievements', value: 3, max: 5, color: '#09949B' },
     { icon: <Target size={24} />, label: 'Goals Met', value: 4, max: 5, color: '#3B6064' }
