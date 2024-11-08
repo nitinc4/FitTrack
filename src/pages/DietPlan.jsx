@@ -22,6 +22,20 @@ export default function DietPlan() {
     <div className="min-h-screen bg-gradient-to-br from-[#C9E4CA] via-[#87BBA2] to-[#55828B]">
       <Navbar />
       <div className="container mx-auto p-6">
+        {/* Calorie Tracker Section */}
+        <div className="bg-white/90 rounded-lg shadow-xl p-6 mt-6">
+          <h2 className="text-2xl font-bold text-[#364958] mb-4">Calorie Tracker</h2>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleImageUpload}
+            className="mb-4"
+          />
+          {image && <img src={image} alt="Uploaded food" className="w-40 h-40 object-cover rounded-md mb-4" />}
+          {calories && <p className="text-lg font-semibold">Estimated Calories: {calories} kcal</p>}
+        </div>
+
+        
         <div className="bg-white/90 rounded-lg shadow-xl p-6">
           <h2 className="text-2xl font-bold text-[#364958] mb-4">Your Diet Plan</h2>
           <div className="grid gap-4">
@@ -46,18 +60,7 @@ export default function DietPlan() {
           </div>
         </div>
 
-        {/* Calorie Tracker Section */}
-        <div className="bg-white/90 rounded-lg shadow-xl p-6 mt-6">
-          <h2 className="text-2xl font-bold text-[#364958] mb-4">Calorie Tracker</h2>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleImageUpload}
-            className="mb-4"
-          />
-          {image && <img src={image} alt="Uploaded food" className="w-40 h-40 object-cover rounded-md mb-4" />}
-          {calories && <p className="text-lg font-semibold">Estimated Calories: {calories} kcal</p>}
-        </div>
+        
       </div>
     </div>
   );
