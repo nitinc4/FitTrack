@@ -1,5 +1,6 @@
 npm i style-components
 npm install lucide-react  
+npm install @react-oauth/google
 
 For Meet:
 fnm use --install-if-missing 22
