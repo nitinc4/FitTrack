@@ -8,12 +8,13 @@ import ActivityMonitor from './pages/ActivityMonitor';
 import Community from './pages/Community';
 import DailyDetails from './pages/DailyDetails';
 import WeeklyDetails from './pages/WeeklyDetails';
+import Layout from './components/Layout';
 
 export default function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Landing />} />
+        <Route path="/" element={<Layout />} />
         <Route path="/home" element={<Home />} />
         <Route path="/diet" element={<DietPlan />} />
         <Route path="/workout" element={<WorkoutPlan />} />
@@ -21,6 +22,7 @@ export default function App() {
         <Route path="/Weekly" element={<WeeklyDetails />} />
         <Route path="/daily" element={<DailyDetails />} />
        <Route path="/community" element={<Community />} />
+       
       </Routes>
     </Router>
   );
