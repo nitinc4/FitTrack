@@ -9,7 +9,6 @@ import Community from './pages/Community';
 import DailyDetails from './pages/DailyDetails';
 import WeeklyDetails from './pages/WeeklyDetails';
 
-
 export default function App() {
   return (
     <Router>
