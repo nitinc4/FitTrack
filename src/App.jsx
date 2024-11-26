@@ -10,7 +10,6 @@ import DailyDetails from './pages/DailyDetails';
 import WeeklyDetails from './pages/WeeklyDetails';
 import Layout from './components/Layout';
 
-
 export default function App() {
   return (
     <Router>
