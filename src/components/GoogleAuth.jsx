@@ -15,7 +15,7 @@ const GoogleAuth = () => {
   const handleSuccess = (credentialResponse) => {
     console.log('Login Success:', credentialResponse);
     localStorage.setItem('googleToken', credentialResponse.credential);
-    navigate('/activity');
+    navigate('/home');
     window.location.reload();
   };
 
