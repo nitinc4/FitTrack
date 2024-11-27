@@ -1,108 +1,139 @@
 import axios from 'axios';
-import { startOfDay, endOfDay, subDays, format } from 'date-fns';
+import { startOfDay, endOfDay, subDays } from 'date-fns';
+import { processAggregatedData } from '../utils/fitnessDataProcessor';
 
+export const GOOGLE_FIT_API = 'https://www.googleapis.com/fitness/v1/users/me';
 
-const GOOGLE_FIT_API = 'https://www.googleapis.com/fitness/v1/users/me';
+// Utility functions to calculate additional fitness metrics
+const calculateHeartRateStats = (points) => {
+  if (!points || points.length === 0) {
+    return { current: 0, min: 0, max: 0, average: 0 };
+  }
+
+  const values = points.map((point) => point.value[0].fpVal);
+  return {
+    current: values[values.length - 1] || 0,
+    min: Math.min(...values),
+    max: Math.max(...values),
+    average: Math.round(values.reduce((a, b) => a + b, 0) / values.length),
+  };
+};
+
+const calculateSleepStats = (points) => {
+  if (!points || points.length === 0) {
+    return {
+      deepSleepMinutes: 0,
+      lightSleepMinutes: 0,
+      remSleepMinutes: 0,
+      totalSleepMinutes: 0,
+    };
+  }
+
+  let deepSleep = 0;
+  let lightSleep = 0;
+  let remSleep = 0;
+
+  points.forEach((point) => {
+    const sleepStage = point.value[0].intVal;
+    const durationMillis = point.endTimeNanos / 1000000 - point.startTimeNanos / 1000000;
+    const durationMinutes = Math.round(durationMillis / 60000);
+
+    switch (sleepStage) {
+      case 1: // Light sleep
+        lightSleep += durationMinutes;
+        break;
+      case 2: // Deep sleep
+        deepSleep += durationMinutes;
+        break;
+      case 3: // REM sleep
+        remSleep += durationMinutes;
+        break;
+    }
+  });
+
+  return {
+    deepSleepMinutes: deepSleep,
+    lightSleepMinutes: lightSleep,
+    remSleepMinutes: remSleep,
+    totalSleepMinutes: deepSleep + lightSleep + remSleep,
+  };
+};
+
+export const fetchUserProfile = async (accessToken) => {
+  const response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch user profile');
+  }
+
+  return response.json();
+};
 
 export const fetchFitnessData = async (accessToken) => {
-  try {
-    const now = new Date();
-    const startTime = startOfDay(subDays(now, 7)).getTime();
-    const endTime = endOfDay(now).getTime();
+  if (!accessToken) {
+    throw new Error('Access token is required');
+  }
 
+  const now = new Date();
+  const startTime = startOfDay(subDays(now, 7)).getTime();
+  const endTime = endOfDay(now).getTime();
+
+  try {
     const response = await axios.post(
       `${GOOGLE_FIT_API}/dataset:aggregate`,
       {
         aggregateBy: [
           {
             dataTypeName: 'com.google.step_count.delta',
-            dataSourceId: 'derived:com.google.step_count.delta:com.google.android.gms:estimated_steps'
+            dataSourceId: 'derived:com.google.step_count.delta:com.google.android.gms:estimated_steps',
           },
           {
             dataTypeName: 'com.google.calories.expended',
-            dataSourceId: 'derived:com.google.calories.expended:com.google.android.gms:merge_calories_expended'
+            dataSourceId: 'derived:com.google.calories.expended:com.google.android.gms:merge_calories_expended',
           },
           {
             dataTypeName: 'com.google.active_minutes',
-            dataSourceId: 'derived:com.google.active_minutes:com.google.android.gms:merge_active_minutes'
-          }
+            dataSourceId: 'derived:com.google.active_minutes:com.google.android.gms:merge_active_minutes',
+          },
+          {
+            dataTypeName: 'com.google.heart_rate.bpm',
+          },
+          {
+            dataTypeName: 'com.google.sleep.segment',
+          },
         ],
-        bucketByTime: { durationMillis: 86400000 }, // 1 day
+        bucketByTime: { durationMillis: 86400000 },
         startTimeMillis: startTime,
-        endTimeMillis: endTime
+        endTimeMillis: endTime,
       },
       {
         headers: {
-          Authorization: `Bearer ${accessToken}`
-        }
+          Authorization: `Bearer ${accessToken}`,
+        },
       }
     );
 
-    return processAggregatedData(response.data);
+    const processedData = processAggregatedData(response.data);
+console.log(response)
+    return {
+      ...processedData,
+      heartRate: calculateHeartRateStats(response.data.bucket[0]?.dataset[3]?.point || []),
+      sleep: calculateSleepStats(response.data.bucket[0]?.dataset[4]?.point || []),
+      lastUpdated: new Date().toISOString(),
+    };
   } catch (error) {
-    console.error('Error fetching fitness data:', error);
-    throw error;
-  }
-};
-
-const processAggregatedData = (data) => {
-  const processedData = {
-    daily: {
-      steps: 0,
-      calories: 0,
-      activeMinutes: 0
-    },
-    weekly: {
-      steps: 0,
-      calories: 0,
-      activeMinutes: 0,
-      dailySteps: []
-    }
-  };
-
-  if (data.bucket && data.bucket.length > 0) {
-    data.bucket.forEach((bucket, index) => {
-      const date = new Date(parseInt(bucket.startTimeMillis));
-      const dayData = {
-        date: format(date, 'EEE'),
-        steps: 0,
-        calories: 0,
-        activeMinutes: 0
-      };
-
-      bucket.dataset.forEach(dataset => {
-        const point = dataset.point[0];
-        if (!point) return;
-
-        switch (dataset.dataSourceId) {
-          case 'derived:com.google.step_count.delta:com.google.android.gms:estimated_steps':
-            dayData.steps = point.value[0].intVal;
-            break;
-          case 'derived:com.google.calories.expended:com.google.android.gms:merge_calories_expended':
-            dayData.calories = Math.round(point.value[0].fpVal);
-            break;
-          case 'derived:com.google.active_minutes:com.google.android.gms:merge_active_minutes':
-            dayData.activeMinutes = point.value[0].intVal;
-            break;
-        }
-      });
-
-      // Add to weekly totals
-      processedData.weekly.steps += dayData.steps;
-      processedData.weekly.calories += dayData.calories;
-      processedData.weekly.activeMinutes += dayData.activeMinutes;
-      processedData.weekly.dailySteps.push(dayData);
-
-      // If it's the most recent day, set as daily values
-      if (index === data.bucket.length - 1) {
-        processedData.daily = {
-          steps: dayData.steps,
-          calories: dayData.calories,
-          activeMinutes: dayData.activeMinutes
-        };
+    if (axios.isAxiosError(error)) {
+      if (error.response?.status === 401) {
+        throw new Error('Authentication failed. Please log in again.');
       }
-    });
+      if (error.response?.status === 403) {
+        throw new Error('Access denied. Please check your permissions.');
+      }
+    }
+    throw new Error('Failed to fetch fitness data. Please try again later.');
   }
-
-  return processedData;
 };
