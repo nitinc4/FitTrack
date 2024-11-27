@@ -119,7 +119,7 @@ export default function Community() {
     if (reviewText.trim() && selectedRating > 0) {
       const newReview = {
         id: reviews.length + 1,
-        author: "Azhar",
+        author: "You",
         rating: selectedRating,
         content: reviewText,
         date: new Date().toISOString().split('T')[0]
