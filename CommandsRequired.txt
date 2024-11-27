@@ -4,6 +4,3 @@ npm install @react-oauth/google
 npm install jwt-decode
 npm install date-fns
 
-For Meet:
-fnm use --install-if-missing 22
-fnm env --use-on-cd | Out-String | Invoke-Expression
