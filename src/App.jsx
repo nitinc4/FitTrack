@@ -9,6 +9,10 @@ import Community from './pages/Community';
 import DailyDetails from './pages/DailyDetails';
 import WeeklyDetails from './pages/WeeklyDetails';
 import Layout from './components/Layout';
+import BeginnerWorkouts from './pages/BeginnerWorkouts';
+import IntermediateWorkouts from './pages/IntermediateWorkouts';
+import AdvancedWorkouts from './pages/AdvancedWorkouts';
+
 
 export default function App() {
   return (
@@ -21,8 +25,13 @@ export default function App() {
         <Route path="/activity" element={<ActivityMonitor />} />
         <Route path="/Weekly" element={<WeeklyDetails />} />
         <Route path="/daily" element={<DailyDetails />} />
-       <Route path="/community" element={<Community />} />
-       
+        <Route path="/community" element={<Community />} />
+        <Route path="/workouts" element={<WorkoutPlan />} />
+        <Route path="/workouts/beginner" element={<BeginnerWorkouts />} />
+        <Route path="/workouts/intermediate" element={<IntermediateWorkouts />} />
+        <Route path="/workouts/advanced" element={<AdvancedWorkouts />} />
+        <Route path="/" element={<WorkoutPlan />} />
+
       </Routes>
     </Router>
   );
