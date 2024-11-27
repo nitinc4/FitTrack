@@ -69,6 +69,7 @@ export default function ActivityMonitor() {
       const data = await fetchFitnessData(token);
       setFitnessData(data);
       setLastUpdated(new Date());
+      console.log(data)
     } catch (err) {
       setError('Failed to load fitness data. Please ensure you have granted the necessary permissions.');
       console.error('Error loading fitness data:', err);
@@ -156,6 +157,7 @@ export default function ActivityMonitor() {
           </HeaderSection>
 
           {error && <ErrorMessage>{error}</ErrorMessage>}
+          {}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <ActivityCard 
