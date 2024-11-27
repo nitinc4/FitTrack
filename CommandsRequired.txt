@@ -1,6 +1,8 @@
 npm i style-components
 npm install lucide-react  
 npm install @react-oauth/google
+npm install jwt-decode
+npm install date-fns
 
 For Meet:
 fnm use --install-if-missing 22

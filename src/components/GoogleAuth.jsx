@@ -2,6 +2,8 @@ import React from 'react';
 import styled from 'styled-components';
 import { GoogleLogin } from '@react-oauth/google';
 import { useNavigate } from 'react-router-dom';
+import { jwtDecode } from 'jwt-decode';
+
 
 const AuthContainer = styled.div`
   display: flex;
@@ -13,10 +15,17 @@ const GoogleAuth = () => {
   const navigate = useNavigate();
 
   const handleSuccess = (credentialResponse) => {
-    console.log('Login Success:', credentialResponse);
-    localStorage.setItem('googleToken', credentialResponse.credential);
-    navigate('/home');
-    window.location.reload();
+    try {
+        const decoded = jwtDecode(credentialResponse.credential);
+        console.log('Decoded token:', decoded);
+        localStorage.setItem('googleToken', credentialResponse.credential);
+        localStorage.setItem('userProfile', JSON.stringify(decoded));
+        localStorage.setItem('userData', JSON.stringify(decoded));
+
+        navigate('/home');
+    } catch (error) {
+        console.error('Error decoding token:', error);
+    }
   };
 
   const handleError = () => {
@@ -31,9 +40,13 @@ const GoogleAuth = () => {
         useOneTap={false}
         flow="implicit"
         ux_mode="popup"
+        theme="dark"
+         scope="https://www.googleapis.com/auth/fitness.activity.read https://www.googleapis.com/auth/fitness.body.read"
       />
     </AuthContainer>
   );
 };
+
+
 
 export default GoogleAuth;

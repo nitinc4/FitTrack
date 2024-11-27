@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import ActivityCard from '../components/ActivityCard';
 import { Activity, TrendingUp, Calendar, RefreshCw } from 'lucide-react';
 import styled from 'styled-components';
-
+import { fetchFitnessData } from '../services/googleFit';
 
 const RefreshButton = styled.button`
   display: flex;
@@ -27,20 +27,6 @@ const RefreshButton = styled.button`
   }
 `;
 
-
-const Container = styled.div`
-  max-width: 1200px;
-  margin: 0 auto;
-`;
-
-const Card = styled.div`
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 1rem;
-  padding: 2rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-`;
-
-
 const HeaderSection = styled.div`
   display: flex;
   justify-content: space-between;
@@ -54,28 +40,65 @@ const IconWrapper = styled.span`
   align-items: center;
 `;
 
+const ErrorMessage = styled.div`
+  background-color: #fee2e2;
+  border: 1px solid #ef4444;
+  color: #b91c1c;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+`;
+
 export default function ActivityMonitor() {
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [fitnessData, setFitnessData] = useState({
+    daily: { steps: 0, calories: 0, activeMinutes: 0 },
+    weekly: { steps: 0, calories: 0, activeMinutes: 0 }
+  });
+  const [error, setError] = useState(null);
+
+  const loadFitnessData = async () => {
+    setIsRefreshing(true);
+    setError(null);
+    try {
+      const token = localStorage.getItem('googleToken');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+      const data = await fetchFitnessData(token);
+      setFitnessData(data);
+      setLastUpdated(new Date());
+    } catch (err) {
+      setError('Failed to load fitness data. Please ensure you have granted the necessary permissions.');
+      console.error('Error loading fitness data:', err);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    loadFitnessData();
+  }, []);
 
   const dailyMetrics = [
     {
       label: 'Steps',
-      value: 8432,
+      value: fitnessData.daily.steps,
       max: 10000,
       color: '#C9E4CA',
       icon: <Activity size={18} />
     },
     {
       label: 'Calories',
-      value: 420,
+      value: fitnessData.daily.calories,
       max: 600,
       color: '#87BBA2',
       icon: <TrendingUp size={18} />
     },
     {
       label: 'Active Minutes',
-      value: 45,
+      value: fitnessData.daily.activeMinutes,
       max: 60,
       color: '#364958',
       icon: <Calendar size={18} />
@@ -85,38 +108,29 @@ export default function ActivityMonitor() {
   const weeklyMetrics = [
     {
       label: 'Weekly Steps',
-      value: 52145,
+      value: fitnessData.weekly.steps,
       max: 70000,
       color: '#C9E4CA',
       icon: <Activity size={18} />
     },
     {
       label: 'Daily Average',
-      value: 7449,
+      value: Math.round(fitnessData.weekly.steps / 7),
       max: 10000,
       color: '#87BBA2',
       icon: <TrendingUp size={18} />
     },
     {
       label: 'Active Days',
-      value: 5,
+      value: fitnessData.weekly.dailySteps?.filter(day => day.steps > 0).length || 0,
       max: 7,
       color: '#364958',
       icon: <Calendar size={18} />
     }
   ];
 
-  const handleRefresh = () => {
-    setIsRefreshing(true);
-    // Simulate data refresh
-    setTimeout(() => {
-      setLastUpdated(new Date());
-      setIsRefreshing(false);
-    }, 1000);
-  };
-
   return (
-      <div className="min-h-screen bg-gradient-to-br from-[#C9E4CA] via-[#87BBA2] to-[#55828B]">
+    <div className="min-h-screen bg-gradient-to-br from-[#C9E4CA] via-[#87BBA2] to-[#55828B]">
       <Navbar />
       <div className="container mx-auto p-6">
         <div className="bg-white/90 rounded-lg shadow-xl p-6">
@@ -131,7 +145,7 @@ export default function ActivityMonitor() {
               <span className="text-sm text-gray-600">
                 Last updated: {lastUpdated.toLocaleTimeString()}
               </span>
-              <RefreshButton onClick={handleRefresh} disabled={isRefreshing}>
+              <RefreshButton onClick={loadFitnessData} disabled={isRefreshing}>
                 <RefreshCw 
                   size={18} 
                   className={isRefreshing ? 'animate-spin' : ''} 
@@ -140,6 +154,9 @@ export default function ActivityMonitor() {
               </RefreshButton>
             </div>
           </HeaderSection>
+
+          {error && <ErrorMessage>{error}</ErrorMessage>}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <ActivityCard 
               title="Today's Activity" 
@@ -155,6 +172,5 @@ export default function ActivityMonitor() {
         </div>
       </div>
     </div>
-    
   );
 }
