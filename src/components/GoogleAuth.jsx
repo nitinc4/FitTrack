@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { useGoogleLogin } from '@react-oauth/google';
 import { useNavigate } from 'react-router-dom';
 import { LogIn } from 'lucide-react';
+import { saveUserProfile } from '../services/api';
 
 const AuthContainer = styled.div`
   display: flex;
@@ -10,9 +11,6 @@ const AuthContainer = styled.div`
   margin: 1rem 0;
 `;
 
-// Function to decode JWT manually
-
-// Function to fetch user profile using access token
 const fetchUserProfile = async (accessToken) => {
   try {
     const response = await fetch('https://www.googleapis.com/oauth2/v1/userinfo?alt=json', {
@@ -22,7 +20,6 @@ const fetchUserProfile = async (accessToken) => {
     });
     if (response.ok) {
       const data = await response.json();
-      console.log('User Profile:', data);
       return data;
     } else {
       console.error('Failed to fetch user profile:', response.statusText);
@@ -38,20 +35,31 @@ const GoogleAuth = () => {
   const navigate = useNavigate();
 
   const handleSuccess = async (accessToken) => {
-    console.log('Access Token:', accessToken);
+    try {
+      const userProfile = await fetchUserProfile(accessToken);
+      
+      if (userProfile) {
+        // Transform Google profile data to match our User model
+        const userData = {
+          googleId: userProfile.id,
+          email: userProfile.email,
+          name: userProfile.name,
+          picture: userProfile.picture,
+        };
 
+        // Save user data to MongoDB
+        await saveUserProfile(userData);
 
-    // Option 2: Fetch user profile using the access token
-    const userProfile = await fetchUserProfile(accessToken);
-    if (userProfile) {
-      localStorage.setItem('userData', JSON.stringify(userProfile)); // Store user profile
+        // Store necessary data in localStorage
+        localStorage.setItem('userData', JSON.stringify(userData));
+        localStorage.setItem('googleToken', accessToken);
+
+        // Navigate to home page
+        navigate('/home');
+      }
+    } catch (error) {
+      console.error('Error during authentication:', error);
     }
-
-    // Save the token for API calls
-    localStorage.setItem('googleToken', accessToken);
-
-    // Navigate to the home page
-    navigate('/home');
   };
 
   const login = useGoogleLogin({
@@ -62,7 +70,7 @@ const GoogleAuth = () => {
       https://www.googleapis.com/auth/fitness.activity.read 
       https://www.googleapis.com/auth/fitness.heart_rate.read 
       https://www.googleapis.com/auth/fitness.sleep.read
-    `.replace(/\s+/g, ' '), // Clean up spacing in scopes
+    `.replace(/\s+/g, ' '),
   });
 
   return (
