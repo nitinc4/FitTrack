@@ -11,8 +11,14 @@ const dbName = "fitfit";
 const connectToDatabase=async() =>{
   try{
     await client.connect();
+    console.log("Connected to database")
   }
-}
+  catch(err){
+    console.log(err)
+    }
+};
+main();
+
 app.use(express.json());
 
 // Connect to MongoDB
