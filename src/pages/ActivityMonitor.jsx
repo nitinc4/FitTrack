@@ -53,8 +53,7 @@ export default function ActivityMonitor() {
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [fitnessData, setFitnessData] = useState({
-    daily: { steps: 0, calories: 0, activeMinutes: 0 },
-    weekly: { steps: 0, calories: 0, activeMinutes: 0 }
+    steps: 0, calories: 0, activeMinutes: 0, lastUpdated: 0
   });
   const [error, setError] = useState(null);
 
@@ -63,13 +62,10 @@ export default function ActivityMonitor() {
     setError(null);
     try {
       const token = localStorage.getItem('googleToken');
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
+      if (!token) throw new Error('No authentication token found');
       const data = await fetchFitnessData(token);
       setFitnessData(data);
       setLastUpdated(new Date());
-      console.log(data)
     } catch (err) {
       setError('Failed to load fitness data. Please ensure you have granted the necessary permissions.');
       console.error('Error loading fitness data:', err);
@@ -81,25 +77,25 @@ export default function ActivityMonitor() {
   useEffect(() => {
     loadFitnessData();
   }, []);
-
+  console.log(fitnessData)
   const dailyMetrics = [
     {
       label: 'Steps',
-      value: fitnessData.daily.steps,
+      value: fitnessData.steps,
       max: 10000,
       color: '#C9E4CA',
       icon: <Activity size={18} />
     },
     {
       label: 'Calories',
-      value: fitnessData.daily.calories,
-      max: 600,
+      value: fitnessData.calories,
+      max: 6000,
       color: '#87BBA2',
       icon: <TrendingUp size={18} />
     },
     {
       label: 'Active Minutes',
-      value: fitnessData.daily.activeMinutes,
+      value: fitnessData.activeMinutes,
       max: 60,
       color: '#364958',
       icon: <Calendar size={18} />
@@ -109,21 +105,21 @@ export default function ActivityMonitor() {
   const weeklyMetrics = [
     {
       label: 'Weekly Steps',
-      value: fitnessData.weekly.steps,
+      value: (fitnessData.steps*7),
       max: 70000,
       color: '#C9E4CA',
       icon: <Activity size={18} />
     },
     {
       label: 'Daily Average',
-      value: Math.round(fitnessData.weekly.steps / 7),
+      value: Math.round(fitnessData.steps / 7),
       max: 10000,
       color: '#87BBA2',
       icon: <TrendingUp size={18} />
     },
     {
       label: 'Active Days',
-      value: fitnessData.weekly.dailySteps?.filter(day => day.steps > 0).length || 0,
+      value: fitnessData.activeMinutes ,
       max: 7,
       color: '#364958',
       icon: <Calendar size={18} />

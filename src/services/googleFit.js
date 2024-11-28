@@ -1,10 +1,3 @@
-import axios from 'axios';
-import { startOfDay, endOfDay, subDays } from 'date-fns';
-import { processAggregatedData } from '../utils/fitnessDataProcessor';
-
-export const GOOGLE_FIT_API = 'https://www.googleapis.com/fitness/v1/users/me';
-
-// Utility functions to calculate additional fitness metrics
 const calculateHeartRateStats = (points) => {
   if (!points || points.length === 0) {
     return { current: 0, min: 0, max: 0, average: 0 };
@@ -35,7 +28,8 @@ const calculateSleepStats = (points) => {
 
   points.forEach((point) => {
     const sleepStage = point.value[0].intVal;
-    const durationMillis = point.endTimeNanos / 1000000 - point.startTimeNanos / 1000000;
+    const durationMillis =
+      point.endTimeNanos / 1000000 - point.startTimeNanos / 1000000;
     const durationMinutes = Math.round(durationMillis / 60000);
 
     switch (sleepStage) {
@@ -60,80 +54,72 @@ const calculateSleepStats = (points) => {
 };
 
 export const fetchUserProfile = async (accessToken) => {
-  const response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-  });
+  const response = await fetch(
+    "https://www.googleapis.com/oauth2/v3/userinfo",
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    }
+  );
 
   if (!response.ok) {
-    throw new Error('Failed to fetch user profile');
+    throw new Error("Failed to fetch user profile");
   }
 
   return response.json();
 };
 
 export const fetchFitnessData = async (accessToken) => {
-  if (!accessToken) {
-    throw new Error('Access token is required');
-  }
-
   const now = new Date();
-  const startTime = startOfDay(subDays(now, 7)).getTime();
-  const endTime = endOfDay(now).getTime();
+  const startTime = new Date(now.setHours(0, 0, 0, 0)).getTime();
+  const endTime = new Date().getTime();
+  const yesterdayStartTime = startTime - 24 * 60 * 60 * 1000;
 
-  try {
-    const response = await axios.post(
-      `${GOOGLE_FIT_API}/dataset:aggregate`,
-      {
+  const response = await fetch(
+    `https://www.googleapis.com/fitness/v1/users/me/dataset:aggregate`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
         aggregateBy: [
           {
-            dataTypeName: 'com.google.step_count.delta',
-            dataSourceId: 'derived:com.google.step_count.delta:com.google.android.gms:estimated_steps',
+            dataTypeName: "com.google.step_count.delta",
           },
           {
-            dataTypeName: 'com.google.calories.expended',
-            dataSourceId: 'derived:com.google.calories.expended:com.google.android.gms:merge_calories_expended',
+            dataTypeName: "com.google.calories.expended",
           },
           {
-            dataTypeName: 'com.google.active_minutes',
-            dataSourceId: 'derived:com.google.active_minutes:com.google.android.gms:merge_active_minutes',
+            dataTypeName: "com.google.active_minutes",
           },
           {
-            dataTypeName: 'com.google.heart_rate.bpm',
+            dataTypeName: "com.google.heart_rate.bpm",
           },
           {
-            dataTypeName: 'com.google.sleep.segment',
+            dataTypeName: "com.google.sleep.segment",
           },
         ],
-        bucketByTime: { durationMillis: 86400000 },
-        startTimeMillis: startTime,
+        startTimeMillis: yesterdayStartTime,
         endTimeMillis: endTime,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      }
-    );
-
-    const processedData = processAggregatedData(response.data);
-console.log(response)
-    return {
-      ...processedData,
-      heartRate: calculateHeartRateStats(response.data.bucket[0]?.dataset[3]?.point || []),
-      sleep: calculateSleepStats(response.data.bucket[0]?.dataset[4]?.point || []),
-      lastUpdated: new Date().toISOString(),
-    };
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      if (error.response?.status === 401) {
-        throw new Error('Authentication failed. Please log in again.');
-      }
-      if (error.response?.status === 403) {
-        throw new Error('Access denied. Please check your permissions.');
-      }
+      }),
     }
-    throw new Error('Failed to fetch fitness data. Please try again later.');
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch fitness data");
   }
+
+  const data = await response.json();
+
+  return {
+    steps: data?.bucket?.[0]?.dataset?.[0]?.point?.[0]?.value?.[0]?.intVal || 0,
+    calories: Math.round(data?.bucket?.[0]?.dataset?.[1]?.point?.[0]?.value?.[0]?.fpVal || 0),
+    activeMinutes: data?.bucket?.[0]?.dataset?.[2]?.point?.[0]?.value?.[0]?.intVal || 0,
+    heartRate: calculateHeartRateStats(data?.bucket?.[0]?.dataset?.[3]?.point || []),
+    sleep: calculateSleepStats(data?.bucket?.[0]?.dataset?.[4]?.point || []),
+    lastUpdated: new Date().toISOString(),
+  };
 };
