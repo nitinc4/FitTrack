@@ -23,8 +23,8 @@ export default function StoryCard({
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-md mb-6 overflow-hidden">
-      <div className="p-6">
+    <div className="bg-white/90 rounded-xl shadow-md mb-6 overflow-hidden max-w-md mx-auto">
+      <div className="p-4">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 rounded-full bg-gradient-to-r from-[#55828B] to-[#3B6064] flex items-center justify-center text-white font-semibold">
             {author[0]}
@@ -34,19 +34,19 @@ export default function StoryCard({
             <p className="text-sm text-gray-500">2 hours ago</p>
           </div>
         </div>
-        <p className="mb-4">{content}</p>
+        <p className="mb-4 text-sm text-gray-700">{content}</p>
         {media && (
-          <div className="rounded-lg overflow-hidden mb-4">
+          <div className="flex justify-center rounded-lg overflow-hidden mb-4">
             {type === 'image' ? (
               <img
                 src={media}
                 alt="Post media"
-                className="w-full h-64 object-cover"
+                className="max-w-full max-h-80 object-cover rounded-lg"
               />
             ) : (
               <video
                 controls
-                className="w-full h-64 object-cover"
+                className="max-w-full max-h-80 object-cover rounded-lg"
                 src={media}
               />
             )}
