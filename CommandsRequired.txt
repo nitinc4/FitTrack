@@ -1,6 +1,5 @@
 npm i style-components
 npm install lucide-react  
 npm install @react-oauth/google
-npm install jwt-decode
-npm install date-fns
+
 
