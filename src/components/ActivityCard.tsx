@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import ProgressBar from './ProgressBar';
 import { ChevronRight } from 'lucide-react';
+import { formatNumber } from '../utils/formatters';
 
 interface ActivityCardProps {
   title: string;
@@ -96,13 +97,13 @@ const ActivityCard: React.FC<ActivityCardProps> = ({ title, metrics, linkTo }) =
           <MetricItem key={index}>
             <IconWrapper>{metric.icon}</IconWrapper>
             <ProgressBar
-              value={metric.value}
+              value={metric.value || 0}
               max={metric.max}
               color={metric.color}
             />
             <MetricLabel>{metric.label}</MetricLabel>
             <MetricValue>
-              {metric.value.toLocaleString()} / {metric.max.toLocaleString()}
+              {formatNumber(metric.value || 0)} / {formatNumber(metric.max)}
             </MetricValue>
           </MetricItem>
         ))}

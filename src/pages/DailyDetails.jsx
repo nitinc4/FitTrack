@@ -1,15 +1,17 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import styled from 'styled-components';
-import { Activity, TrendingUp, Calendar, ArrowLeft, Clock, Heart } from 'lucide-react';
+import { Activity, TrendingUp, Calendar, ArrowLeft, Award, Target } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ProgressBar from '../components/ProgressBar';
+import { fetchFitnessData } from '../services/googleFit';
+import { formatNumber } from '../utils/formatters';
 
 const Header = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
 `;
 
 const BackButton = styled.button`
@@ -53,45 +55,97 @@ const MetricCard = styled.div`
   gap: 1rem;
 `;
 
-const TimelineSection = styled.div`
+const WeekGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1rem;
   margin-top: 2rem;
 `;
 
-const Timeline = styled.div`
-  display: grid;
-  grid-template-columns: repeat(24, 1fr);
-  gap: 0.5rem;
+const DayCard = styled.div`
+  background: ${props => (props.$isToday ? '#87BBA2' : 'rgba(54, 73, 88, 0.1)')};
   padding: 1rem;
-  background: rgba(255, 255, 255, 0.5);
   border-radius: 0.5rem;
+  text-align: center;
+  color: ${props => (props.$isToday ? 'white' : '#364958')};
 `;
 
-const TimeBlock = styled.div`
-  height: 40px;
-  background-color: ${props => (props.$active ? '#87BBA2' : 'rgba(54, 73, 88, 0.1)')};
-  border-radius: 0.25rem;
-  transition: all 0.2s;
-  cursor: pointer;
-
-  &:hover {
-    transform: scaleY(1.1);
-  }
+const ErrorMessage = styled.div`
+  background-color: #fee2e2;
+  border: 1px solid #ef4444;
+  color: #b91c1c;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
 `;
 
-export default function DailyDetails() {
+export default function WeeklyDetails() {
   const navigate = useNavigate();
+  const [fitnessData, setFitnessData] = useState(null);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadFitnessData = async () => {
+      try {
+        const token = localStorage.getItem('googleToken');
+        if (!token) throw new Error('No authentication token found');
+        
+        const data = await fetchFitnessData(token);
+        setFitnessData(data);
+      } catch (err) {
+        setError('Failed to load fitness data');
+        console.error('Error loading fitness data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadFitnessData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#C9E4CA] via-[#87BBA2] to-[#55828B] flex items-center justify-center">
+        <div className="text-white text-xl">Loading...</div>
+      </div>
+    );
+  }
+
+  const activeDays = fitnessData?.weekly?.dailySteps?.filter(day => day.steps > 0).length || 0;
+  
   const metrics = [
-    { icon: <Activity size={24} />, label: 'Steps', value: 8432, max: 10000, color: '#C9E4CA' },
-    { icon: <TrendingUp size={24} />, label: 'Calories', value: 420, max: 600, color: '#87BBA2' },
-    { icon: <Calendar size={24} />, label: 'Active Minutes', value: 45, max: 60, color: '#364958' },
-    { icon: <Heart size={24} />, label: 'Avg Heart Rate', value: 72, max: 100, color: '#09949B' },
-    { icon: <Clock size={24} />, label: 'Sleep Hours', value: 7, max: 8, color: '#3B6064' }
+    { 
+      icon: <Activity size={24} />, 
+      label: 'Weekly Steps', 
+      value: fitnessData?.weekly?.steps || 0, 
+      max: 70000, 
+      color: '#C9E4CA' 
+    },
+    { 
+      icon: <TrendingUp size={24} />, 
+      label: 'Daily Average', 
+      value: Math.round((fitnessData?.weekly?.steps || 0) / 7), 
+      max: 10000, 
+      color: '#87BBA2' 
+    },
+    { 
+      icon: <Calendar size={24} />, 
+      label: 'Active Days', 
+      value: activeDays, 
+      max: 7, 
+      color: '#364958' 
+    },
+    { 
+      icon: <Award size={24} />, 
+      label: 'Weekly Goal Progress', 
+      value: Math.round((fitnessData?.weekly?.steps || 0) / 700), 
+      max: 100, 
+      color: '#09949B' 
+    }
   ];
 
-  // Simulate active hours (just for demonstration)
-  const activeHours = Array(24)
-    .fill(false)
-    .map((_, i) => Math.random() > 0.5 && i >= 6 && i <= 22);
+  const weekDays = fitnessData?.weekly?.dailySteps || [];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#C9E4CA] via-[#87BBA2] to-[#55828B]">
@@ -103,28 +157,37 @@ export default function DailyDetails() {
               <ArrowLeft size={20} />
               Back
             </BackButton>
-            <Title>Daily Activity Details</Title>
+            <Title>Weekly Activity Summary</Title>
           </Header>
+
+          {error && <ErrorMessage>{error}</ErrorMessage>}
 
           <MetricsGrid>
             {metrics.map((metric, index) => (
               <MetricCard key={index}>
                 {metric.icon}
-                <ProgressBar value={metric.value} max={metric.max} color={metric.color} />
+                <ProgressBar
+                  value={metric.value}
+                  max={metric.max}
+                  color={metric.color}
+                />
                 <div>{metric.label}</div>
-                <div>{metric.value.toLocaleString()} / {metric.max.toLocaleString()}</div>
+                <div>{formatNumber(metric.value)} / {formatNumber(metric.max)}</div>
               </MetricCard>
             ))}
           </MetricsGrid>
 
-          <TimelineSection>
-            <h2 className="text-xl font-bold text-[#364958] mb-4">Activity Timeline</h2>
-            <Timeline>
-              {activeHours.map((active, index) => (
-                <TimeBlock key={index} $active={active} title={`${index}:00 - ${index + 1}:00`} />
-              ))}
-            </Timeline>
-          </TimelineSection>
+          <h2 className="text-xl font-bold text-[#364958] mb-4">Daily Breakdown</h2>
+          <WeekGrid>
+            {weekDays.map((day, index) => (
+              <DayCard key={index} $isToday={index === weekDays.length - 1}>
+                <div className="font-bold mb-2">{day.date}</div>
+                <div className="text-sm">{formatNumber(day.steps)} steps</div>
+                <div className="text-sm">{formatNumber(day.calories)} cal</div>
+                <div className="text-sm">{day.activeMinutes} min</div>
+              </DayCard>
+            ))}
+          </WeekGrid>
         </div>
       </div>
     </div>
