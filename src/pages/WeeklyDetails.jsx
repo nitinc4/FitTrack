@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import styled from 'styled-components';
 import { Activity, TrendingUp, Calendar, ArrowLeft, Award, Target } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ProgressBar from '../components/ProgressBar';
+import { fetchFitnessData } from '../services/googleFit';
+import { formatNumber } from '../utils/formatters';
 
 const Header = styled.div`
   display: flex;
@@ -68,24 +70,77 @@ const DayCard = styled.div`
   color: ${props => (props.$isToday ? 'white' : '#364958')};
 `;
 
+const ErrorMessage = styled.div`
+  background-color: #fee2e2;
+  border: 1px solid #ef4444;
+  color: #b91c1c;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+`;
+
 export default function WeeklyDetails() {
   const navigate = useNavigate();
-  const metrics = [
-    { icon: <Activity size={24} />, label: 'Weekly Steps', value: 52145, max: 70000, color: '#C9E4CA' },
-    { icon: <TrendingUp size={24} />, label: 'Daily Average', value: 8009, max: 10000, color: '#87BBA2' },
-    { icon: <Calendar size={24} />, label: 'Active Days', value: 5, max: 7, color: '#364958' },
-    { icon: <Award size={24} />, label: 'Achievements', value: 3, max: 5, color: '#09949B' },
-    { icon: <Target size={24} />, label: 'Goals Met', value: 4, max: 5, color: '#3B6064' }
-  ];
+  const [fitnessData, setFitnessData] = useState(null);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const weekDays = [
-    { day: 'Mon', steps: 8432, isToday: false },
-    { day: 'Tue', steps: 7654, isToday: false },
-    { day: 'Wed', steps: 9876, isToday: false },
-    { day: 'Thu', steps: 6543, isToday: true },
-    { day: 'Fri', steps: 8765, isToday: false },
-    { day: 'Sat', steps: 5432, isToday: false },
-    { day: 'Sun', steps: 7654, isToday: false }
+  useEffect(() => {
+    const loadFitnessData = async () => {
+      try {
+        const token = localStorage.getItem('googleToken');
+        if (!token) throw new Error('No authentication token found');
+        
+        const data = await fetchFitnessData(token);
+        setFitnessData(data);
+      } catch (err) {
+        setError('Failed to load fitness data');
+        console.error('Error loading fitness data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadFitnessData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#C9E4CA] via-[#87BBA2] to-[#55828B] flex items-center justify-center">
+        <div className="text-white text-xl">Loading...</div>
+      </div>
+    );
+  }
+
+  const metrics = [
+    { 
+      icon: <Activity size={24} />, 
+      label: 'Weekly Steps', 
+      value: fitnessData?.weekly?.steps || 0, 
+      max: 70000, 
+      color: '#C9E4CA' 
+    },
+    { 
+      icon: <TrendingUp size={24} />, 
+      label: 'Daily Average', 
+      value: Math.round((fitnessData?.weekly?.steps || 0) / 7), 
+      max: 10000, 
+      color: '#87BBA2' 
+    },
+    { 
+      icon: <Calendar size={24} />, 
+      label: 'Active Days', 
+      value: fitnessData?.weekly?.activeDays || 0, 
+      max: 7, 
+      color: '#364958' 
+    },
+    { 
+      icon: <Award size={24} />, 
+      label: 'Weekly Calories', 
+      value: fitnessData?.weekly?.calories || 0, 
+      max: 17500, 
+      color: '#09949B' 
+    }
   ];
 
   return (
@@ -101,6 +156,8 @@ export default function WeeklyDetails() {
             <Title>Weekly Activity Summary</Title>
           </Header>
 
+          {error && <ErrorMessage>{error}</ErrorMessage>}
+
           <MetricsGrid>
             {metrics.map((metric, index) => (
               <MetricCard key={index}>
@@ -111,17 +168,19 @@ export default function WeeklyDetails() {
                   color={metric.color}
                 />
                 <div>{metric.label}</div>
-                <div>{metric.value.toLocaleString()} / {metric.max.toLocaleString()}</div>
+                <div>{formatNumber(metric.value)} / {formatNumber(metric.max)}</div>
               </MetricCard>
             ))}
           </MetricsGrid>
 
           <h2 className="text-xl font-bold text-[#364958] mb-4">Daily Breakdown</h2>
           <WeekGrid>
-            {weekDays.map((day, index) => (
-              <DayCard key={index} $isToday={day.isToday}>
-                <div className="font-bold mb-2">{day.day}</div>
-                <div className="text-sm">{day.steps.toLocaleString()} steps</div>
+            {fitnessData?.weekly?.dailySteps?.map((day, index) => (
+              <DayCard key={index} $isToday={index === 6}>
+                <div className="font-bold mb-2">{day.date}</div>
+                <div className="text-sm">{formatNumber(day.steps)} steps</div>
+                <div className="text-sm">{formatNumber(day.calories)} cal</div>
+                <div className="text-sm">{day.activeMinutes} min</div>
               </DayCard>
             ))}
           </WeekGrid>

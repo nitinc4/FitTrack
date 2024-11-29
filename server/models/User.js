@@ -16,6 +16,10 @@ const userSchema = new mongoose.Schema({
     required: true
   },
   picture: String,
+  age: Number,
+  weight: Number,
+  height: Number,
+  goals: String,
   createdAt: {
     type: Date,
     default: Date.now

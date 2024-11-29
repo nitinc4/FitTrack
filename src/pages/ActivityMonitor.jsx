@@ -53,7 +53,8 @@ export default function ActivityMonitor() {
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [fitnessData, setFitnessData] = useState({
-    steps: 0, calories: 0, activeMinutes: 0, lastUpdated: 0
+    daily: { steps: 0, calories: 0, activeMinutes: 0 },
+    weekly: { steps: 0, calories: 0, activeMinutes: 0, activeDays: 0 }
   });
   const [error, setError] = useState(null);
 
@@ -77,25 +78,25 @@ export default function ActivityMonitor() {
   useEffect(() => {
     loadFitnessData();
   }, []);
-  console.log(fitnessData)
+
   const dailyMetrics = [
     {
       label: 'Steps',
-      value: fitnessData.steps,
+      value: fitnessData.daily?.steps || 0,
       max: 10000,
       color: '#C9E4CA',
       icon: <Activity size={18} />
     },
     {
       label: 'Calories',
-      value: fitnessData.calories,
-      max: 6000,
+      value: fitnessData.daily?.calories || 0,
+      max: 2500,
       color: '#87BBA2',
       icon: <TrendingUp size={18} />
     },
     {
       label: 'Active Minutes',
-      value: fitnessData.activeMinutes,
+      value: fitnessData.daily?.activeMinutes || 0,
       max: 60,
       color: '#364958',
       icon: <Calendar size={18} />
@@ -105,21 +106,21 @@ export default function ActivityMonitor() {
   const weeklyMetrics = [
     {
       label: 'Weekly Steps',
-      value: (fitnessData.steps*7),
+      value: fitnessData.weekly?.steps || 0,
       max: 70000,
       color: '#C9E4CA',
       icon: <Activity size={18} />
     },
     {
       label: 'Daily Average',
-      value: Math.round(fitnessData.steps / 7),
+      value: Math.round((fitnessData.weekly?.steps || 0) / 7),
       max: 10000,
       color: '#87BBA2',
       icon: <TrendingUp size={18} />
     },
     {
       label: 'Active Days',
-      value: fitnessData.activeMinutes ,
+      value: fitnessData.weekly?.activeDays || 0,
       max: 7,
       color: '#364958',
       icon: <Calendar size={18} />
@@ -153,7 +154,6 @@ export default function ActivityMonitor() {
           </HeaderSection>
 
           {error && <ErrorMessage>{error}</ErrorMessage>}
-          {}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <ActivityCard 

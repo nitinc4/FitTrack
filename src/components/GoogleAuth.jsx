@@ -54,8 +54,8 @@ const GoogleAuth = () => {
         localStorage.setItem('userData', JSON.stringify(userData));
         localStorage.setItem('googleToken', accessToken);
 
-        // Navigate to home page
-        navigate('/home');
+        // Reload the page to trigger the onboarding check
+        window.location.reload();
       }
     } catch (error) {
       console.error('Error during authentication:', error);
