@@ -40,7 +40,7 @@ export default function AdvancedWorkouts() {
         </button>
         
         <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-xl p-6">
-          <h2 className="text-2xl font-bold text-[#364958] mb-6">Advanced Workout Plan</h2>
+          <h2 className="text-2xl font-bold text-[#364958] mb-6">Beginner Workout Plan</h2>
           
           <div className="grid gap-6">
             {workouts.map((workout, index) => (
