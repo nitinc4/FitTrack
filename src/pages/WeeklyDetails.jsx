@@ -112,6 +112,8 @@ export default function WeeklyDetails() {
     );
   }
 
+  const activeDays = fitnessData?.weekly?.dailySteps?.filter(day => day.steps > 0).length || 0;
+  
   const metrics = [
     { 
       icon: <Activity size={24} />, 
@@ -130,18 +132,20 @@ export default function WeeklyDetails() {
     { 
       icon: <Calendar size={24} />, 
       label: 'Active Days', 
-      value: fitnessData?.weekly?.activeDays || 0, 
+      value: activeDays, 
       max: 7, 
       color: '#364958' 
     },
     { 
       icon: <Award size={24} />, 
-      label: 'Weekly Calories', 
-      value: fitnessData?.weekly?.calories || 0, 
-      max: 17500, 
+      label: 'Weekly Goal Progress', 
+      value: Math.round((fitnessData?.weekly?.steps || 0) / 700), 
+      max: 100, 
       color: '#09949B' 
     }
   ];
+
+  const weekDays = fitnessData?.weekly?.dailySteps || [];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#C9E4CA] via-[#87BBA2] to-[#55828B]">
@@ -175,8 +179,8 @@ export default function WeeklyDetails() {
 
           <h2 className="text-xl font-bold text-[#364958] mb-4">Daily Breakdown</h2>
           <WeekGrid>
-            {fitnessData?.weekly?.dailySteps?.map((day, index) => (
-              <DayCard key={index} $isToday={index === 6}>
+            {weekDays.map((day, index) => (
+              <DayCard key={index} $isToday={index === weekDays.length - 1}>
                 <div className="font-bold mb-2">{day.date}</div>
                 <div className="text-sm">{formatNumber(day.steps)} steps</div>
                 <div className="text-sm">{formatNumber(day.calories)} cal</div>
