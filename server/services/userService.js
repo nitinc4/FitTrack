@@ -22,3 +22,20 @@ export const getUserByGoogleId = async (googleId) => {
     throw error;
   }
 };
+
+export const updateUserProfile = async (userData) => {
+  try {
+    const user = await User.findOneAndUpdate(
+      { googleId: userData.googleId },
+      userData,
+      { new: true }
+    );
+    if (!user) {
+      throw new Error('User not found');
+    }
+    return user;
+  } catch (error) {
+    console.error('Error in updateUserProfile:', error);
+    throw error;
+  }
+};

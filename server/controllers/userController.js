@@ -36,3 +36,21 @@ export const getUserByGoogleId = async (req, res, next) => {
     next(error);
   }
 };
+
+export const updateUserProfile = async (req, res, next) => {
+  try {
+    const userData = req.body;
+    
+    if (!userData.googleId) {
+      throw new ApiError(400, 'Missing googleId');
+    }
+
+    const user = await userService.updateUserProfile(userData);
+    res.status(200).json({
+      success: true,
+      data: user
+    });
+  } catch (error) {
+    next(error);
+  }
+};
