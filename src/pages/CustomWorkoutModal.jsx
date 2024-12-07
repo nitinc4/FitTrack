@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Plus, Trash } from 'lucide-react';
 
-export default function CustomWorkoutModal({ onClose }) {
+export default function CustomWorkoutModal({ onClose, onSave }) {
   const [workoutName, setWorkoutName] = useState('');
   const [exercises, setExercises] = useState([{ name: '', sets: '', reps: '' }]);
 
@@ -25,17 +25,15 @@ export default function CustomWorkoutModal({ onClose }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Here you would typically save the workout to your state management solution or backend
-    const workout = {
+    const workoutData = {
       name: workoutName,
       exercises: exercises
     };
-    console.log('Saving workout:', workout);
-    onClose();
+    onSave(workoutData);
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl">
         <div className="flex justify-between items-center p-6 border-b">
           <h3 className="text-xl font-semibold">Create Custom Workout</h3>
@@ -91,13 +89,15 @@ export default function CustomWorkoutModal({ onClose }) {
                     required
                   />
                 </div>
-                <button
-                  type="button"
-                  onClick={() => removeExercise(index)}
-                  className="p-2 text-red-500 hover:text-red-700"
-                >
-                  <Trash className="w-5 h-5" />
-                </button>
+                {exercises.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeExercise(index)}
+                    className="p-2 text-red-500 hover:text-red-700"
+                  >
+                    <Trash className="w-5 h-5" />
+                  </button>
+                )}
               </div>
             ))}
           </div>

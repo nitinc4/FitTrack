@@ -2,12 +2,13 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
-import axios from 'axios'; // Add axios for making API requests
+import axios from 'axios';
 import userRoutes from './routes/userRoutes.js';
 import imageRoutes from './routes/imageRoutes.js';
 import postRoutes from './routes/postRoutes.js';
 import reviewRoutes from './routes/reviewRoutes.js';
 import challengeRoutes from './routes/challengeRoutes.js';
+import workoutRoutes from './routes/workoutRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import connectDatabase from './config/database.js';
 
@@ -16,7 +17,6 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// CORS configuration
 app.use(
   cors({
     origin: 'http://localhost:5173',
@@ -24,29 +24,25 @@ app.use(
   })
 );
 
-// Middleware
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Connect to MongoDB
 connectDatabase();
 
-// Routes
 app.use('/api/users', userRoutes);
 app.use('/api', imageRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/challenges', challengeRoutes);
+app.use('/api/workouts', workoutRoutes);
 
-// Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
-// Clarifai Proxy Route
 app.post('/api/clarifai', async (req, res) => {
   try {
-    const { base64 } = req.body; // Ensure the request contains the image in base64 format
+    const { base64 } = req.body;
     const clarifaiResponse = await axios.post(
       'https://api.clarifai.com/v2/models/bd367be194cf45149e75f01d59f77ba7/outputs',
       {
@@ -62,7 +58,7 @@ app.post('/api/clarifai', async (req, res) => {
       },
       {
         headers: {
-          'Authorization': `Key ${process.env.CLARIFAI_API_KEY}`, // Use your API key from the .env file
+          'Authorization': `Key ${process.env.CLARIFAI_API_KEY}`,
           'Content-Type': 'application/json',
         },
       }
@@ -74,10 +70,8 @@ app.post('/api/clarifai', async (req, res) => {
   }
 });
 
-// Error handling
 app.use(errorHandler);
 
-// Start server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

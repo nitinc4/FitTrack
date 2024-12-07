@@ -1,12 +1,56 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import CustomWorkoutModal from '../pages/CustomWorkoutModal';
-import { Plus } from 'lucide-react';
+import CustomWorkoutModal from './CustomWorkoutModal';
+import { Plus, Trash2 } from 'lucide-react';
+import { createWorkout, getWorkouts, deleteWorkout } from '../services/workoutService.js';
 
 export default function WorkoutPlan() {
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
+  const [customWorkouts, setCustomWorkouts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const userData = JSON.parse(localStorage.getItem('userData'));
+
+  useEffect(() => {
+    fetchWorkouts();
+  }, []);
+
+  const fetchWorkouts = async () => {
+    try {
+      const workouts = await getWorkouts(userData.googleId);
+      setCustomWorkouts(workouts);
+    } catch (error) {
+      console.error('Error fetching workouts:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveWorkout = async (workoutData) => {
+    try {
+      const newWorkout = await createWorkout({
+        ...workoutData,
+        userId: userData.googleId
+      });
+      setCustomWorkouts([newWorkout, ...customWorkouts]);
+      setShowModal(false);
+    } catch (error) {
+      console.error('Error saving workout:', error);
+    }
+  };
+
+  const handleDeleteWorkout = async (workoutId) => {
+    if (window.confirm('Are you sure you want to delete this workout?')) {
+      try {
+        await deleteWorkout(workoutId);
+        setCustomWorkouts(customWorkouts.filter(workout => workout._id !== workoutId));
+      } catch (error) {
+        console.error('Error deleting workout:', error);
+      }
+    }
+  };
 
   const difficultyLevels = [
     {
@@ -26,6 +70,14 @@ export default function WorkoutPlan() {
     }
   ];
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#C9E4CA] via-[#87BBA2] to-[#55828B] flex items-center justify-center">
+        <div className="text-white text-xl">Loading...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#C9E4CA] via-[#87BBA2] to-[#55828B]">
       <Navbar />
@@ -43,6 +95,34 @@ export default function WorkoutPlan() {
           </div>
           
           <div className="flex flex-col gap-6">
+            {/* Custom Workouts */}
+            {customWorkouts.map((workout) => (
+              <div
+                key={workout._id}
+                className="bg-[#87BBA2] p-6 rounded-lg shadow-md hover:shadow-lg 
+                  transition-all duration-300 w-full text-white relative"
+              >
+                <div className="flex justify-between items-start mb-4">
+                  <h3 className="text-xl font-semibold">{workout.name}</h3>
+                  <button
+                    onClick={() => handleDeleteWorkout(workout._id)}
+                    className="text-white/80 hover:text-white transition-colors"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {workout.exercises.map((exercise, idx) => (
+                    <div key={idx} className="flex justify-between text-white/90">
+                      <span>{exercise.name}</span>
+                      <span>{exercise.sets} × {exercise.reps}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+
+            {/* Difficulty Levels */}
             {difficultyLevels.map((level) => (
               <div
                 key={level.title}
@@ -59,7 +139,7 @@ export default function WorkoutPlan() {
         </div>
       </div>
       
-      {showModal && <CustomWorkoutModal onClose={() => setShowModal(false)} />}
+      {showModal && <CustomWorkoutModal onClose={() => setShowModal(false)} onSave={handleSaveWorkout} />}
     </div>
   );
 }
