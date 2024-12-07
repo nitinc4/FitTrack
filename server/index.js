@@ -8,6 +8,7 @@ import imageRoutes from './routes/imageRoutes.js';
 import postRoutes from './routes/postRoutes.js';
 import reviewRoutes from './routes/reviewRoutes.js';
 import challengeRoutes from './routes/challengeRoutes.js';
+import dietRoutes from './routes/dietRoutes.js';
 import workoutRoutes from './routes/workoutRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import connectDatabase from './config/database.js';
@@ -35,6 +36,7 @@ app.use('/api/posts', postRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/challenges', challengeRoutes);
 app.use('/api/workouts', workoutRoutes);
+app.use('/api/diet', dietRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
