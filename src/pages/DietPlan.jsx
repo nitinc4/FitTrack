@@ -1,255 +1,200 @@
-import React, { useState, useEffect } from 'react';
-import { Camera, PenLine, Calendar, BarChart3, Plus, Trash2, ChevronDown } from 'lucide-react';
-import  Navbar  from '../components/Navbar';
+import React, { useState } from 'react';
+import { Camera, Plus, Trash2 } from 'lucide-react';
+import Navbar from '../components/Navbar';
+import NutritionSearch from '../components/NutritionSearch';
+import NutritionDisplay from '../components/NutritionDisplay';
+import ImageAnalyzer from '../components/ImageAnalyzer';
 
 export default function DietPlan() {
-  const [entries, setEntries] = useState(() => {
-    const saved = localStorage.getItem('mealEntries');
-    return saved ? JSON.parse(saved) : [];
-  });
   const [showForm, setShowForm] = useState(false);
-  const [calories, setCalories] = useState('');
+  const [nutritionInfo, setNutritionInfo] = useState(null);
+  const [mealEntries, setMealEntries] = useState([]);
   const [description, setDescription] = useState('');
-  const [selectedImage, setSelectedImage] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [viewMode, setViewMode] = useState('daily');
+  const [selectedMealType, setSelectedMealType] = useState('breakfast');
 
-  useEffect(() => {
-    localStorage.setItem('mealEntries', JSON.stringify(entries));
-  }, [entries]);
+  const handleFoodSelect = (foodInfo) => {
+    setNutritionInfo(foodInfo);
+  };
 
-  const handleImageUpload = async (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  const handleFoodDetected = (foodInfo) => {
+    setNutritionInfo({
+      name: foodInfo.name,
+      calories: foodInfo.calories,
+      serving_size_g: 100,
+      protein_g: 0,
+      fat_total_g: 0,
+      carbohydrates_total_g: 0,
+      fiber_g: 0,
+      sugar_g: 0,
+      sodium_mg: 0,
+      potassium_mg: 0,
+      cholesterol_mg: 0,
+    });
+    setDescription(foodInfo.name);
+  };
 
-    setLoading(true);
-    try {
-      // Simulate AI analysis with a delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // In a real app, you'd send the image to an AI service
-      const mockCalories = Math.floor(Math.random() * 500) + 200;
-      setCalories(mockCalories.toString());
-      setSelectedImage(URL.createObjectURL(file));
-    } catch (error) {
-      console.error('Error analyzing image:', error);
-    } finally {
-      setLoading(false);
+  const handleAddEntry = () => {
+    if (nutritionInfo) {
+      const newEntry = {
+        id: Date.now(),
+        mealType: selectedMealType,
+        description: description || nutritionInfo.name,
+        nutritionInfo,
+        timestamp: new Date().toISOString(),
+      };
+      setMealEntries([...mealEntries, newEntry]);
+      setShowForm(false);
+      setNutritionInfo(null);
+      setDescription('');
+      setSelectedMealType('breakfast');
     }
   };
 
-  const addEntry = () => {
-    if (!calories || !description) return;
-
-    const newEntry = {
-      id: Date.now().toString(),
-      calories: Number(calories),
-      description,
-      image: selectedImage || undefined,
-      timestamp: new Date().toISOString(),
-    };
-
-    setEntries(prev => [newEntry, ...prev]);
-    setCalories('');
-    setDescription('');
-    setSelectedImage(null);
-    setShowForm(false);
+  const handleDeleteEntry = (id) => {
+    setMealEntries(mealEntries.filter(entry => entry.id !== id));
   };
 
-  const deleteEntry = (id) => {
-    setEntries(prev => prev.filter(entry => entry.id !== id));
+  const calculateDailyTotals = () => {
+    return mealEntries.reduce((totals, entry) => ({
+      calories: totals.calories + entry.nutritionInfo.calories,
+      protein: totals.protein + (entry.nutritionInfo.protein_g || 0),
+      carbs: totals.carbs + (entry.nutritionInfo.carbohydrates_total_g || 0),
+      fat: totals.fat + (entry.nutritionInfo.fat_total_g || 0),
+    }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
   };
 
-  const getTotalCalories = (entries) => {
-    return entries.reduce((sum, entry) => sum + entry.calories, 0);
-  };
-
-  const getFilteredEntries = () => {
-    const now = new Date();
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
-
-    return entries.filter(entry => {
-      const entryDate = new Date(entry.timestamp);
-      return viewMode === 'daily' 
-        ? entryDate >= startOfDay 
-        : entryDate >= startOfWeek;
-    });
-  };
-
-  const filteredEntries = getFilteredEntries();
-  const totalCalories = getTotalCalories(filteredEntries);
+  const dailyTotals = calculateDailyTotals();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#C9E4CA] via-[#87BBA2] to-[#55828B]">
       <Navbar />
-      
       <div className="container mx-auto p-6 space-y-6">
-        {/* Stats Card */}
         <div className="bg-white/90 rounded-lg shadow-xl p-6">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-[#364958]">Calorie Tracker</h2>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setViewMode('daily')}
-                className={`px-4 py-2 rounded-lg ${
-                  viewMode === 'daily'
-                    ? 'bg-[#55828B] text-white'
-                    : 'bg-gray-100 text-gray-600'
-                }`}
-              >
-                Daily
-              </button>
-              <button
-                onClick={() => setViewMode('weekly')}
-                className={`px-4 py-2 rounded-lg ${
-                  viewMode === 'weekly'
-                    ? 'bg-[#55828B] text-white'
-                    : 'bg-gray-100 text-gray-600'
-                }`}
-              >
-                Weekly
-              </button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-gradient-to-r from-[#55828B] to-[#3B6064] p-6 rounded-lg text-white">
-              <h3 className="text-lg font-semibold mb-2">Total Calories</h3>
-              <div className="text-3xl font-bold">{totalCalories}</div>
-              <p className="text-sm opacity-80">
-                {viewMode === 'daily' ? 'Today' : 'This Week'}
-              </p>
-            </div>
-            
+            <h2 className="text-2xl font-bold text-[#364958]">Diet Tracker</h2>
             <button
               onClick={() => setShowForm(true)}
-              className="flex items-center justify-center gap-2 bg-[#87BBA2] hover:bg-[#55828B] text-white p-6 rounded-lg transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-[#55828B] text-white rounded-lg hover:bg-[#446870] transition-colors"
             >
-              <Plus size={24} />
-              <span className="font-semibold">Add New Entry</span>
+              <Plus className="w-5 h-5" />
+              Add Meal
             </button>
           </div>
-        </div>
 
-        {/* Add Entry Form */}
-        {showForm && (
-          <div className="bg-white/90 rounded-lg shadow-xl p-6">
-            <h3 className="text-xl font-semibold mb-4">Add New Entry</h3>
-            <div className="space-y-4">
-              <div className="flex gap-4">
-                <div className="flex-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Calories
-                  </label>
-                  <input
-                    type="number"
-                    value={calories}
-                    onChange={(e) => setCalories(e.target.value)}
-                    className="w-full p-2 border rounded-lg"
-                    placeholder="Enter calories"
-                  />
-                </div>
-                <div className="flex-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Description
-                  </label>
-                  <input
-                    type="text"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    className="w-full p-2 border rounded-lg"
-                    placeholder="What did you eat?"
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4">
-                <label className="flex items-center gap-2 cursor-pointer bg-[#87BBA2] text-white px-4 py-2 rounded-lg hover:bg-[#55828B] transition-colors">
-                  <Camera size={20} />
-                  <span>Upload Image</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                  />
-                </label>
-                {loading && <span className="text-sm text-gray-600">Analyzing image...</span>}
-              </div>
-
-              {selectedImage && (
-                <div className="relative w-40 h-40">
-                  <img
-                    src={selectedImage}
-                    alt="Food preview"
-                    className="w-full h-full object-cover rounded-lg"
-                  />
-                  <button
-                    onClick={() => setSelectedImage(null)}
-                    className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              )}
-
-              <div className="flex justify-end gap-2">
-                <button
-                  onClick={() => setShowForm(false)}
-                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={addEntry}
-                  className="px-4 py-2 bg-[#55828B] text-white rounded-lg hover:bg-[#3B6064]"
-                >
-                  Add Entry
-                </button>
-              </div>
+          {/* Daily Summary */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div className="bg-[#55828B] p-4 rounded-lg text-white">
+              <h3 className="text-lg font-semibold mb-2">Calories</h3>
+              <p>{Math.round(dailyTotals.calories)} kcal</p>
+            </div>
+            <div className="bg-[#55828B] p-4 rounded-lg text-white">
+              <h3 className="text-lg font-semibold mb-2">Protein</h3>
+              <p>{Math.round(dailyTotals.protein)}g</p>
+            </div>
+            <div className="bg-[#55828B] p-4 rounded-lg text-white">
+              <h3 className="text-lg font-semibold mb-2">Carbs</h3>
+              <p>{Math.round(dailyTotals.carbs)}g</p>
+            </div>
+            <div className="bg-[#55828B] p-4 rounded-lg text-white">
+              <h3 className="text-lg font-semibold mb-2">Fat</h3>
+              <p>{Math.round(dailyTotals.fat)}g</p>
             </div>
           </div>
-        )}
 
-        {/* Entries List */}
-        <div className="bg-white/90 rounded-lg shadow-xl p-6">
-          <h3 className="text-xl font-semibold mb-4">Recent Entries</h3>
+          {/* Add Meal Form */}
+          {showForm && (
+            <div className="bg-white/90 rounded-lg shadow-xl p-6 mb-6">
+              <h3 className="text-xl font-semibold mb-4">Add New Meal</h3>
+              <div className="space-y-4">
+                <div className="flex gap-4">
+                  <NutritionSearch onFoodSelect={handleFoodSelect} />
+                  <div className="text-gray-500">- OR -</div>
+                  <ImageAnalyzer onFoodDetected={handleFoodDetected} />
+                </div>
+
+                {nutritionInfo && (
+                  <>
+                    <NutritionDisplay nutritionInfo={nutritionInfo} />
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Meal Type
+                        </label>
+                        <select
+                          value={selectedMealType}
+                          onChange={(e) => setSelectedMealType(e.target.value)}
+                          className="w-full p-2 border rounded-md"
+                        >
+                          <option value="breakfast">Breakfast</option>
+                          <option value="lunch">Lunch</option>
+                          <option value="dinner">Dinner</option>
+                          <option value="snack">Snack</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Description (optional)
+                        </label>
+                        <input
+                          type="text"
+                          value={description}
+                          onChange={(e) => setDescription(e.target.value)}
+                          placeholder="Add notes about your meal..."
+                          className="w-full p-2 border rounded-md"
+                        />
+                      </div>
+                      <div className="flex justify-end gap-4">
+                        <button
+                          onClick={() => setShowForm(false)}
+                          className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={handleAddEntry}
+                          className="px-4 py-2 bg-[#55828B] text-white rounded-md hover:bg-[#446870]"
+                        >
+                          Add Entry
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Meal Entries */}
           <div className="space-y-4">
-            {filteredEntries.map((entry) => (
+            {mealEntries.map((entry) => (
               <div
                 key={entry.id}
-                className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg"
+                className="bg-white rounded-lg shadow p-4 flex justify-between items-center"
               >
-                {entry.image && (
-                  <img
-                    src={entry.image}
-                    alt="Food"
-                    className="w-16 h-16 object-cover rounded-lg"
-                  />
-                )}
-                <div className="flex-1">
-                  <p className="font-semibold">{entry.description}</p>
-                  <p className="text-sm text-gray-600">
-                    {new Date(entry.timestamp).toLocaleString()}
-                  </p>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-gray-500 capitalize">
+                      {entry.mealType}
+                    </span>
+                    <span className="text-lg font-semibold">
+                      {entry.description || entry.nutritionInfo.name}
+                    </span>
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    {entry.nutritionInfo.calories} kcal | 
+                    Protein: {entry.nutritionInfo.protein_g}g | 
+                    Carbs: {entry.nutritionInfo.carbohydrates_total_g}g | 
+                    Fat: {entry.nutritionInfo.fat_total_g}g
+                  </div>
                 </div>
-                <div className="flex items-center gap-4">
-                  <span className="font-semibold">{entry.calories} cal</span>
-                  <button
-                    onClick={() => deleteEntry(entry.id)}
-                    className="text-red-500 hover:text-red-600"
-                  >
-                    <Trash2 size={20} />
-                  </button>
-                </div>
+                <button
+                  onClick={() => handleDeleteEntry(entry.id)}
+                  className="text-red-500 hover:text-red-700"
+                >
+                  <Trash2 className="w-5 h-5" />
+                </button>
               </div>
             ))}
-            {filteredEntries.length === 0 && (
-              <p className="text-center text-gray-500 py-4">
-                No entries found for this period
-              </p>
-            )}
           </div>
         </div>
       </div>
