@@ -5,6 +5,9 @@ import mongoose from 'mongoose';
 import axios from 'axios'; // Add axios for making API requests
 import userRoutes from './routes/userRoutes.js';
 import imageRoutes from './routes/imageRoutes.js';
+import postRoutes from './routes/postRoutes.js';
+import reviewRoutes from './routes/reviewRoutes.js';
+import challengeRoutes from './routes/challengeRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import connectDatabase from './config/database.js';
 
@@ -31,6 +34,9 @@ connectDatabase();
 // Routes
 app.use('/api/users', userRoutes);
 app.use('/api', imageRoutes);
+app.use('/api/posts', postRoutes);
+app.use('/api/reviews', reviewRoutes);
+app.use('/api/challenges', challengeRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

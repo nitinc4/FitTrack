@@ -3,14 +3,11 @@ import React from 'react';
 export default function NutritionDisplay({ nutritionInfo }) {
   if (!nutritionInfo) return null;
 
-  // Default to an empty array if ingredients are not available
-  const ingredients = nutritionInfo.ingredients || [];
-
   const nutritionFields = [
     { label: 'Serving Size', value: `${nutritionInfo.serving_size_g}g` },
     { label: 'Calories', value: nutritionInfo.calories },
     { label: 'Total Fat', value: `${nutritionInfo.fat_total_g}g` },
-    { label: 'Saturated Fat', value: `${nutritionInfo.fat_saturated_g || 0}g` },
+    { label: 'Saturated Fat', value: `${nutritionInfo.fat_saturated_g}g` },
     { label: 'Protein', value: `${nutritionInfo.protein_g}g` },
     { label: 'Carbohydrates', value: `${nutritionInfo.carbohydrates_total_g}g` },
     { label: 'Fiber', value: `${nutritionInfo.fiber_g}g` },
@@ -31,11 +28,6 @@ export default function NutritionDisplay({ nutritionInfo }) {
           </div>
         ))}
       </div>
-      {ingredients.length > 0 && (
-        <div className="mt-4">
-          <p className="text-gray-600">Ingredients: {ingredients.join(', ')}</p>
-        </div>
-      )}
     </div>
   );
 }
