@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Camera } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import NutritionSearch from '../components/NutritionSearch';
 import NutritionDisplay from '../components/NutritionDisplay';
@@ -8,8 +8,105 @@ import DietPlanCard from '../components/DietPlanCard';
 import CaloriesSummary from '../components/CaloriesSummary';
 import MealEntry from '../components/MealEntry';
 import { createDietEntry, getDailyEntries, deleteDietEntry } from '../services/dietService';
+import styled from 'styled-components';
+import { motion } from 'framer-motion';
 
-// Define DIET_PLANS here
+const PageContainer = styled(motion.div)`
+  min-height: 100vh;
+  background: linear-gradient(135deg, #C9E4CA 0%, #87BBA2 50%, #55828B 100%);
+`;
+
+const ContentWrapper = styled(motion.div)`
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  padding-top: 4rem;
+`;
+
+const DashboardContainer = styled(motion.div)`
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+`;
+
+const Header = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+`;
+
+const Title = styled.h1`
+  font-size: 2.5rem;
+  color: #364958;
+  font-weight: bold;
+  margin: 0;
+`;
+
+const AddButton = styled(motion.button)`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #55828B, #3B6064);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 500;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+  }
+`;
+
+const PlanGrid = styled(motion.div)`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  margin-top: 2rem;
+`;
+
+const FormContainer = styled(motion.div)`
+  background: linear-gradient(to right, #ffffff, #f8f9fa);
+  border-radius: 16px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+`;
+
+const MealList = styled(motion.div)`
+  display: grid;
+  gap: 1rem;
+  margin-top: 2rem;
+`;
+
+const containerVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.6,
+      when: "beforeChildren",
+      staggerChildren: 0.2
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.4 }
+  }
+};
+
 const DIET_PLANS = [
   {
     id: 'weight-loss',
@@ -26,12 +123,12 @@ const DIET_PLANS = [
   {
     id: 'muscle-gain',
     title: 'Muscle Gain Plan',
-    description: 'High-protein diet with calorie surplus',
+    description: 'High-protein diet with calorie surplus to gain weight',
     calories: 2500
   }
 ];
 
-export default function DietPlan() {
+function DietPlan() {
   const [showPlanSelection, setShowPlanSelection] = useState(true);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [showForm, setShowForm] = useState(false);
@@ -41,10 +138,12 @@ export default function DietPlan() {
   const [selectedMealType, setSelectedMealType] = useState('breakfast');
   const [consumedCalories, setConsumedCalories] = useState(0);
 
-  const userData = JSON.parse(localStorage.getItem('userData'));
+  const userData = JSON.parse(localStorage.getItem('userData') || '{}');
 
   useEffect(() => {
-    fetchDailyEntries();
+    if (userData?.googleId) {
+      fetchDailyEntries();
+    }
   }, []);
 
   const fetchDailyEntries = async () => {
@@ -103,50 +202,68 @@ export default function DietPlan() {
 
   if (showPlanSelection) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#C9E4CA] via-[#87BBA2] to-[#55828B]">
+      <PageContainer
+        initial="hidden"
+        animate="visible"
+        variants={containerVariants}
+      >
         <Navbar />
-        <div className="container mx-auto p-6">
-          <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-xl p-6">
-            <h2 className="text-2xl font-bold text-[#364958] mb-6">Choose Your Diet Plan</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <ContentWrapper>
+          <DashboardContainer variants={itemVariants}>
+            <Title className="mb-6">Choose Your Diet Plan</Title>
+            <PlanGrid variants={containerVariants}>
               {DIET_PLANS.map(plan => (
-                <DietPlanCard
+                <motion.div
                   key={plan.id}
-                  {...plan}
-                  onClick={() => handlePlanSelect(plan)}
-                />
+                  variants={itemVariants}
+                  whileHover={{ scale: 1.03 }}
+                >
+                  <DietPlanCard
+                    {...plan}
+                    onClick={() => handlePlanSelect(plan)}
+                  />
+                </motion.div>
               ))}
-            </div>
-          </div>
-        </div>
-      </div>
+            </PlanGrid>
+          </DashboardContainer>
+        </ContentWrapper>
+      </PageContainer>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#C9E4CA] via-[#87BBA2] to-[#55828B]">
+    <PageContainer
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+    >
       <Navbar />
-      <div className="container mx-auto p-6 space-y-6">
-        <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-xl p-6">
-          <div className="flex justify-between items-center mb-6">
+      <ContentWrapper>
+        <DashboardContainer variants={itemVariants}>
+          <Header>
             <div>
-              <h2 className="text-2xl font-bold text-[#364958]">Diet Tracker</h2>
+              <Title>Diet Tracker</Title>
               <CaloriesSummary
                 consumedCalories={consumedCalories}
                 targetCalories={selectedPlan.calories}
               />
             </div>
-            <button
+            <AddButton
               onClick={() => setShowForm(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#55828B] to-[#3B6064] text-white rounded-lg hover:opacity-90 transition-all duration-200 shadow-md hover:shadow-lg"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
-              <Plus className="w-5 h-5" />
+              <Plus size={20} />
               Add Meal
-            </button>
-          </div>
+            </AddButton>
+          </Header>
 
           {showForm && (
-            <div className="bg-gradient-to-br from-white to-[#F8FAFC] rounded-lg shadow-lg p-6 mb-6 border border-[#E2E8F0]">
+            <FormContainer
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+            >
               <h3 className="text-xl font-semibold text-[#364958] mb-4">Add New Meal</h3>
               <div className="space-y-4">
                 <div className="flex gap-4">
@@ -156,7 +273,11 @@ export default function DietPlan() {
                 </div>
 
                 {nutritionInfo && (
-                  <>
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="space-y-4"
+                  >
                     <NutritionDisplay nutritionInfo={nutritionInfo} />
                     <div className="space-y-4">
                       <div>
@@ -166,7 +287,7 @@ export default function DietPlan() {
                         <select
                           value={selectedMealType}
                           onChange={(e) => setSelectedMealType(e.target.value)}
-                          className="w-full p-2 border rounded-md focus:ring-2 focus:ring-[#55828B] focus:border-transparent bg-white"
+                          className="w-full p-2 border rounded-md focus:ring-2 focus:ring-[#55828B] focus:border-transparent"
                         >
                           <option value="breakfast">Breakfast</option>
                           <option value="lunch">Lunch</option>
@@ -183,7 +304,7 @@ export default function DietPlan() {
                           value={description}
                           onChange={(e) => setDescription(e.target.value)}
                           placeholder="Add notes about your meal..."
-                          className="w-full p-2 border rounded-md focus:ring-2 focus:ring-[#55828B] focus:border-transparent bg-white"
+                          className="w-full p-2 border rounded-md focus:ring-2 focus:ring-[#55828B] focus:border-transparent"
                         />
                       </div>
                       <div className="flex justify-end gap-4">
@@ -195,29 +316,36 @@ export default function DietPlan() {
                         </button>
                         <button
                           onClick={handleAddEntry}
-                          className="px-4 py-2 bg-gradient-to-r from-[#55828B] to-[#3B6064] text-white rounded-md hover:opacity-90 transition-all duration-200 shadow-md hover:shadow-lg"
+                          className="px-4 py-2 bg-gradient-to-r from-[#55828B] to-[#3B6064] text-white rounded-md hover:opacity-90 transition-all duration-200"
                         >
                           Add Entry
                         </button>
                       </div>
                     </div>
-                  </>
+                  </motion.div>
                 )}
               </div>
-            </div>
+            </FormContainer>
           )}
 
-          <div className="space-y-4">
+          <MealList variants={containerVariants}>
             {mealEntries.map((entry) => (
-              <MealEntry
+              <motion.div
                 key={entry._id}
-                entry={entry}
-                onDelete={handleDeleteEntry}
-              />
+                variants={itemVariants}
+                whileHover={{ scale: 1.02 }}
+              >
+                <MealEntry
+                  entry={entry}
+                  onDelete={handleDeleteEntry}
+                />
+              </motion.div>
             ))}
-          </div>
-        </div>
-      </div>
-    </div>
+          </MealList>
+        </DashboardContainer>
+      </ContentWrapper>
+    </PageContainer>
   );
 }
+
+export default DietPlan;

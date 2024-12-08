@@ -3,53 +3,107 @@ import Navbar from '../components/Navbar';
 import ActivityCard from '../components/ActivityCard';
 import { Activity, TrendingUp, Calendar, RefreshCw } from 'lucide-react';
 import styled from 'styled-components';
+import { motion } from 'framer-motion';
 import { fetchFitnessData } from '../services/googleFit';
 
-const RefreshButton = styled.button`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background-color: #364958;
-  color: white;
-  border: none;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: all 0.2s ease-in-out;
-
-  &:hover {
-    background-color: #55828B;
-    transform: scale(1.05);
-  }
-
-  &:active {
-    transform: scale(0.95);
-  }
+const PageContainer = styled(motion.div)`
+  min-height: 100vh;
+  background: linear-gradient(135deg, #C9E4CA 0%, #87BBA2 50%, #55828B 100%);
 `;
 
-const HeaderSection = styled.div`
+const ContentWrapper = styled(motion.div)`
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  padding-top: 4rem;
+`;
+
+const DashboardContainer = styled(motion.div)`
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+`;
+
+const Header = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
 `;
 
-const IconWrapper = styled.span`
-  margin-right: 0.5rem;
-  display: inline-flex;
+const Title = styled.h1`
+  font-size: 2.5rem;
+  color: #364958;
+  font-weight: bold;
+  margin: 0;
+`;
+
+const RefreshButton = styled(motion.button)`
+  display: flex;
   align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #55828B, #3B6064);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
 `;
 
-const ErrorMessage = styled.div`
+const GridContainer = styled(motion.div)`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  margin-top: 2rem;
+`;
+
+const ErrorMessage = styled(motion.div)`
   background-color: #fee2e2;
   border: 1px solid #ef4444;
   color: #b91c1c;
   padding: 1rem;
-  border-radius: 0.5rem;
+  border-radius: 12px;
   margin-bottom: 1rem;
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.1);
 `;
 
-export default function ActivityMonitor() {
+const containerVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.6,
+      when: "beforeChildren",
+      staggerChildren: 0.2
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.4 }
+  }
+};
+
+function ActivityMonitor() {
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [fitnessData, setFitnessData] = useState({
@@ -85,21 +139,21 @@ export default function ActivityMonitor() {
       value: fitnessData.daily?.steps || 0,
       max: 10000,
       color: '#C9E4CA',
-      icon: <Activity size={18} />
+      icon: <Activity size={24} />
     },
     {
       label: 'Calories',
       value: fitnessData.daily?.calories || 0,
       max: 2500,
       color: '#87BBA2',
-      icon: <TrendingUp size={18} />
+      icon: <TrendingUp size={24} />
     },
     {
       label: 'Active Minutes',
       value: fitnessData.daily?.activeMinutes || 0,
       max: 60,
       color: '#364958',
-      icon: <Calendar size={18} />
+      icon: <Calendar size={24} />
     }
   ];
 
@@ -109,53 +163,60 @@ export default function ActivityMonitor() {
       value: fitnessData.weekly?.steps || 0,
       max: 70000,
       color: '#C9E4CA',
-      icon: <Activity size={18} />
+      icon: <Activity size={24} />
     },
     {
       label: 'Daily Average',
       value: Math.round((fitnessData.weekly?.steps || 0) / 7),
       max: 10000,
       color: '#87BBA2',
-      icon: <TrendingUp size={18} />
+      icon: <TrendingUp size={24} />
     },
     {
       label: 'Active Days',
       value: fitnessData.weekly?.activeDays || 0,
       max: 7,
       color: '#364958',
-      icon: <Calendar size={18} />
+      icon: <Calendar size={24} />
     }
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#C9E4CA] via-[#87BBA2] to-[#55828B]">
+    <PageContainer
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+    >
       <Navbar />
-      <div className="container mx-auto p-6">
-        <div className="bg-white/90 rounded-lg shadow-xl p-6">
-          <HeaderSection>
-            <h2 className="text-2xl font-bold text-[#364958]">
-              <IconWrapper>
-                <Activity size={24} />
-              </IconWrapper>
-              Activity Tracking
-            </h2>
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-600">
-                Last updated: {lastUpdated.toLocaleTimeString()}
-              </span>
-              <RefreshButton onClick={loadFitnessData} disabled={isRefreshing}>
-                <RefreshCw 
-                  size={18} 
-                  className={isRefreshing ? 'animate-spin' : ''} 
-                />
-                Refresh
-              </RefreshButton>
-            </div>
-          </HeaderSection>
+      <ContentWrapper>
+        <DashboardContainer variants={itemVariants}>
+          <Header>
+            <Title>Activity Dashboard</Title>
+            <RefreshButton
+              onClick={loadFitnessData}
+              disabled={isRefreshing}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <RefreshCw 
+                size={20} 
+                className={isRefreshing ? 'animate-spin' : ''} 
+              />
+              {isRefreshing ? 'Refreshing...' : 'Refresh Data'}
+            </RefreshButton>
+          </Header>
 
-          {error && <ErrorMessage>{error}</ErrorMessage>}
+          {error && (
+            <ErrorMessage
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+            >
+              {error}
+            </ErrorMessage>
+          )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <GridContainer variants={containerVariants}>
             <ActivityCard 
               title="Today's Activity" 
               metrics={dailyMetrics}
@@ -166,9 +227,11 @@ export default function ActivityMonitor() {
               metrics={weeklyMetrics}
               linkTo="/weekly" 
             />
-          </div>
-        </div>
-      </div>
-    </div>
+          </GridContainer>
+        </DashboardContainer>
+      </ContentWrapper>
+    </PageContainer>
   );
 }
+
+export default ActivityMonitor;
