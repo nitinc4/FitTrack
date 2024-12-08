@@ -204,7 +204,7 @@ export default function Community() {
                 title="30-Day Fitness Challenge" 
                 participants={150}
                 difficulty="Intermediate"
-                reward="Rs-500 Gift Card"
+                reward="Rs-5000 Gift Card"
                 daysLeft={25}
               />
               <ChallengeCard 
