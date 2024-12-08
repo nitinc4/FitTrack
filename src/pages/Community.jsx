@@ -171,7 +171,7 @@ export default function Community() {
         </div>
 
         {activeTab === 'stories' && (
-          <div className="space-y-6">
+          <div className="mx-[8%] space-y-4">
             <div className="bg-gradient-to-br from-[#C9E4CA] via-[#87BBA2] to-[#55828B] rounded-xl shadow-lg p-6">
               <div className="flex items-center gap-4 mb-6">
                 <div className="relative group">
