@@ -4,6 +4,22 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 export const createPost = async (postData) => {
   try {
+    // If there's media, first upload it and get the URL
+    if (postData.mediaUrl) {
+      // Convert the local blob URL to base64
+      const response = await fetch(postData.mediaUrl);
+      const blob = await response.blob();
+      const reader = new FileReader();
+      
+      const base64 = await new Promise((resolve) => {
+        reader.onloadend = () => resolve(reader.result);
+        reader.readAsDataURL(blob);
+      });
+
+      // Update the post data with the base64 string
+      postData.mediaUrl = base64;
+    }
+
     const response = await axios.post(`${API_URL}/posts`, postData);
     return response.data.data;
   } catch (error) {

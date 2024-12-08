@@ -1,16 +1,31 @@
 import Post from '../models/Post.js';
 import { ApiError } from '../middleware/errorHandler.js';
+import { uploadMedia, getMediaUrl } from '../utils/mediaHandler.js';
 
 export const createPost = async (req, res, next) => {
   try {
     const { content, mediaUrl, mediaType, author } = req.body;
+    
+    // Handle media upload if present
+    let finalMediaUrl = mediaUrl;
+    if (mediaUrl && mediaUrl.startsWith('data:')) {
+      finalMediaUrl = await uploadMedia(mediaUrl);
+    }
+
     const post = await Post.create({
       content,
-      mediaUrl,
+      mediaUrl: finalMediaUrl,
       mediaType,
       author
     });
-    res.status(201).json({ success: true, data: post });
+
+    // When returning the post, ensure the mediaUrl is accessible
+    const populatedPost = await Post.findById(post._id);
+    if (populatedPost.mediaUrl) {
+      populatedPost.mediaUrl = await getMediaUrl(populatedPost.mediaUrl);
+    }
+
+    res.status(201).json({ success: true, data: populatedPost });
   } catch (error) {
     next(error);
   }
@@ -19,7 +34,18 @@ export const createPost = async (req, res, next) => {
 export const getPosts = async (req, res, next) => {
   try {
     const posts = await Post.find().sort({ createdAt: -1 });
-    res.status(200).json({ success: true, data: posts });
+    
+    // Ensure all media URLs are accessible
+    const populatedPosts = await Promise.all(
+      posts.map(async (post) => {
+        if (post.mediaUrl) {
+          post.mediaUrl = await getMediaUrl(post.mediaUrl);
+        }
+        return post;
+      })
+    );
+
+    res.status(200).json({ success: true, data: populatedPosts });
   } catch (error) {
     next(error);
   }
@@ -68,7 +94,6 @@ export const addComment = async (req, res, next) => {
     post.comments.push(newComment);
     await post.save();
 
-    // Fetch the updated post with populated comments
     const updatedPost = await Post.findById(postId);
     res.status(201).json({ success: true, data: updatedPost });
   } catch (error) {

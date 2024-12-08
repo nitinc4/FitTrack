@@ -3,15 +3,14 @@ import { ThumbsUp, MessageSquare, Share2 } from 'lucide-react';
 import CommentSection from './CommentSection';
 import { formatDistanceToNow } from 'date-fns';
 
-
 export default function StoryCard({
   postId,
   author,
   content,
-  likes,
-  comments,
   media,
   type,
+  likes,
+  comments,
   isLiked,
   createdAt,
   onLike,
@@ -43,7 +42,6 @@ export default function StoryCard({
             <p className="text-sm text-gray-500">
               {createdAt ? formatDistanceToNow(new Date(createdAt), { addSuffix: true }) : 'Just now'}
             </p>
-
           </div>
         </div>
         <p className="mb-5 text-gray-700 leading-relaxed">{content}</p>
@@ -55,14 +53,22 @@ export default function StoryCard({
                 src={media}
                 alt="Post media"
                 className="w-full h-auto max-h-96 object-cover"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = 'https://via.placeholder.com/400x300?text=Image+Not+Available';
+                }}
               />
-            ) : (
+            ) : type === 'video' ? (
               <video
                 controls
                 className="w-full h-auto max-h-96 object-cover"
                 src={media}
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.parentElement.innerHTML = 'Video not available';
+                }}
               />
-            )}
+            ) : null}
           </div>
         )}
 
