@@ -213,7 +213,7 @@ export default function Community() {
                 difficulty="Advanced"
                 reward="Tech Gadget Pack"
                 daysLeft={18}
-                joined={true}
+              
               />
             </div>
           )}
