@@ -1,49 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Camera, Video } from 'lucide-react';
+import { Camera } from 'lucide-react';
 import TabButton from '../components/TabButton';
 import StoryCard from '../components/StoryCard';
 import ChallengeCard from '../components/ChallengeCard';
 import ReviewCard from '../components/ReviewCard';
 import Navbar from '../components/Navbar';
 import { createPost, getPosts, toggleLike } from '../services/postService';
-
-const initialChallenges = [
-  {
-    id: 1,
-    title: "30-Day Plank Challenge",
-    participants: 0,
-    difficulty: "Intermediate",
-    reward: "Gold Badge",
-    daysLeft: 15,
-    joined: false
-  },
-  {
-    id: 2,
-    title: "10K Steps Daily",
-    participants: 0,
-    difficulty: "Beginner",
-    reward: "Silver Badge",
-    daysLeft: 20,
-    joined: false
-  }
-];
-
-const initialReviews = [
-  {
-    id: 1,
-    author: "Emma L.",
-    rating: 5,
-    content: "This community has transformed my fitness journey!",
-    date: "2024-03-15"
-  },
-  {
-    id: 2,
-    author: "John D.",
-    rating: 4,
-    content: "Great support system and motivation.",
-    date: "2024-03-14"
-  }
-];
+import { createReview, getReviews } from '../services/reviewService';
 
 export default function Community() {
   const [activeTab, setActiveTab] = useState('stories');
@@ -52,14 +15,14 @@ export default function Community() {
   const [reviewText, setReviewText] = useState('');
   const [selectedRating, setSelectedRating] = useState(0);
   const [posts, setPosts] = useState([]);
-  const [challenges] = useState(initialChallenges);
-  const [reviews, setReviews] = useState(initialReviews);
+  const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const userData = JSON.parse(localStorage.getItem('userData'));
 
   useEffect(() => {
     fetchPosts();
+    fetchReviews();
   }, []);
 
   const fetchPosts = async () => {
@@ -73,11 +36,18 @@ export default function Community() {
     }
   };
 
+  const fetchReviews = async () => {
+    try {
+      const fetchedReviews = await getReviews();
+      setReviews(fetchedReviews);
+    } catch (error) {
+      console.error('Error fetching reviews:', error);
+    }
+  };
+
   const handleMediaUpload = async (event) => {
     const file = event.target.files?.[0];
     if (file) {
-      // In a real application, you would upload this to a storage service
-      // For now, we'll use local URL
       setSelectedMedia({
         url: URL.createObjectURL(file),
         type: file.type.startsWith('image/') ? 'image' : 'video'
@@ -120,32 +90,37 @@ export default function Community() {
     }
   };
 
-  const handleSubmitReview = () => {
+  const handleSubmitReview = async () => {
     if (reviewText.trim() && selectedRating > 0) {
-      const newReview = {
-        id: reviews.length + 1,
-        author: userData.name,
-        rating: selectedRating,
-        content: reviewText,
-        date: new Date().toISOString().split('T')[0]
-      };
-      setReviews([newReview, ...reviews]);
-      setReviewText('');
-      setSelectedRating(0);
+      try {
+        const newReview = {
+          author: {
+            googleId: userData.googleId,
+            name: userData.name,
+            picture: userData.picture
+          },
+          rating: selectedRating,
+          content: reviewText
+        };
+
+        await createReview(newReview);
+        await fetchReviews();
+        setReviewText('');
+        setSelectedRating(0);
+      } catch (error) {
+        console.error('Error submitting review:', error);
+      }
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-[#C9E4CA] via-[#87BBA2] to-[#55828B] flex items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
-      </div>
-    );
-  }
+  const handleCommentAdded = async () => {
+    await fetchPosts();
+  };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#C9E4CA] via-[#87BBA2] to-[#55828B]">
-      <Navbar/>
+      <Navbar />
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-center mb-8">
           <div className="bg-white rounded-lg shadow-lg p-2 inline-flex gap-2">
@@ -208,26 +183,40 @@ export default function Community() {
               {posts.map((post) => (
                 <StoryCard 
                   key={post._id}
+                  postId={post._id}
                   author={post.author.name}
                   content={post.content}
                   media={post.mediaUrl}
                   type={post.mediaType}
                   likes={post.likes.length}
+                  comments={post.comments}
                   isLiked={post.likes.includes(userData.googleId)}
                   onLike={() => handleLike(post._id)}
+                  onCommentAdded={handleCommentAdded}
                 />
               ))}
             </div>
           </div>
         )}
-
         {activeTab === 'challenges' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {challenges.map((challenge) => (
-              <ChallengeCard key={challenge.id} {...challenge} />
-            ))}
-          </div>
-        )}
+            <div className="grid md:grid-cols-2 gap-6 mx-[8%]">
+              <ChallengeCard 
+                title="30-Day Fitness Challenge" 
+                participants={150}
+                difficulty="Intermediate"
+                reward="$500 Gift Card"
+                daysLeft={25}
+              />
+              <ChallengeCard 
+                title="7-Days Fitness Challenge" 
+                participants={200}
+                difficulty="Advanced"
+                reward="Tech Gadget Pack"
+                daysLeft={18}
+                joined={true}
+              />
+            </div>
+          )}
 
         {activeTab === 'reviews' && (
           <div className="space-y-6">
@@ -264,7 +253,13 @@ export default function Community() {
             </div>
 
             {reviews.map((review) => (
-              <ReviewCard key={review.id} {...review} />
+              <ReviewCard
+                key={review._id}
+                author={review.author.name}
+                rating={review.rating}
+                content={review.content}
+                date={new Date(review.createdAt).toLocaleDateString()}
+              />
             ))}
           </div>
         )}

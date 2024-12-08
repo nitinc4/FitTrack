@@ -59,9 +59,33 @@ export const addComment = async (req, res, next) => {
       throw new ApiError(404, 'Post not found');
     }
 
-    post.comments.push({ author, content });
+    const newComment = {
+      author,
+      content,
+      createdAt: new Date()
+    };
+
+    post.comments.push(newComment);
     await post.save();
-    res.status(201).json({ success: true, data: post });
+
+    // Fetch the updated post with populated comments
+    const updatedPost = await Post.findById(postId);
+    res.status(201).json({ success: true, data: updatedPost });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getComments = async (req, res, next) => {
+  try {
+    const { postId } = req.params;
+    const post = await Post.findById(postId);
+    
+    if (!post) {
+      throw new ApiError(404, 'Post not found');
+    }
+
+    res.status(200).json({ success: true, data: post.comments });
   } catch (error) {
     next(error);
   }
