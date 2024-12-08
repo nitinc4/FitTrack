@@ -1,115 +1,158 @@
-import React, { useState } from 'react';
-import { Camera, Plus, Trash2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import NutritionSearch from '../components/NutritionSearch';
 import NutritionDisplay from '../components/NutritionDisplay';
 import ImageAnalyzer from '../components/ImageAnalyzer';
+import DietPlanCard from '../components/DietPlanCard';
+import CaloriesSummary from '../components/CaloriesSummary';
+import MealEntry from '../components/MealEntry';
+import { createDietEntry, getDailyEntries, deleteDietEntry } from '../services/dietService';
+
+// Define DIET_PLANS here
+const DIET_PLANS = [
+  {
+    id: 'weight-loss',
+    title: 'Weight Loss Plan',
+    description: 'Calorie-deficit diet focused on lean proteins and vegetables',
+    calories: 1500
+  },
+  {
+    id: 'maintenance',
+    title: 'Maintenance Plan',
+    description: 'Balanced diet to maintain current weight',
+    calories: 2000
+  },
+  {
+    id: 'muscle-gain',
+    title: 'Muscle Gain Plan',
+    description: 'High-protein diet with calorie surplus',
+    calories: 2500
+  }
+];
 
 export default function DietPlan() {
+  const [showPlanSelection, setShowPlanSelection] = useState(true);
+  const [selectedPlan, setSelectedPlan] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [nutritionInfo, setNutritionInfo] = useState(null);
   const [mealEntries, setMealEntries] = useState([]);
   const [description, setDescription] = useState('');
   const [selectedMealType, setSelectedMealType] = useState('breakfast');
+  const [consumedCalories, setConsumedCalories] = useState(0);
 
-  const handleFoodSelect = (foodInfo) => {
-    setNutritionInfo(foodInfo);
-  };
+  const userData = JSON.parse(localStorage.getItem('userData'));
 
-  const handleFoodDetected = (foodInfo) => {
-    setNutritionInfo({
-      name: foodInfo.name,
-      calories: foodInfo.calories,
-      serving_size_g: 100,
-      protein_g: 0,
-      fat_total_g: 0,
-      carbohydrates_total_g: 0,
-      fiber_g: 0,
-      sugar_g: 0,
-      sodium_mg: 0,
-      potassium_mg: 0,
-      cholesterol_mg: 0,
-    });
-    setDescription(foodInfo.name);
-  };
+  useEffect(() => {
+    fetchDailyEntries();
+  }, []);
 
-  const handleAddEntry = () => {
-    if (nutritionInfo) {
-      const newEntry = {
-        id: Date.now(),
-        mealType: selectedMealType,
-        description: description || nutritionInfo.name,
-        nutritionInfo,
-        timestamp: new Date().toISOString(),
-      };
-      setMealEntries([...mealEntries, newEntry]);
-      setShowForm(false);
-      setNutritionInfo(null);
-      setDescription('');
-      setSelectedMealType('breakfast');
+  const fetchDailyEntries = async () => {
+    try {
+      const data = await getDailyEntries(userData.googleId);
+      setMealEntries(data.entries);
+      setConsumedCalories(data.totalCalories);
+    } catch (error) {
+      console.error('Error fetching daily entries:', error);
     }
   };
 
-  const handleDeleteEntry = (id) => {
-    setMealEntries(mealEntries.filter(entry => entry.id !== id));
+  const handlePlanSelect = (plan) => {
+    setSelectedPlan(plan);
+    setShowPlanSelection(false);
   };
 
-  const calculateDailyTotals = () => {
-    return mealEntries.reduce((totals, entry) => ({
-      calories: totals.calories + entry.nutritionInfo.calories,
-      protein: totals.protein + (entry.nutritionInfo.protein_g || 0),
-      carbs: totals.carbs + (entry.nutritionInfo.carbohydrates_total_g || 0),
-      fat: totals.fat + (entry.nutritionInfo.fat_total_g || 0),
-    }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
+  const handleAddEntry = async () => {
+    if (nutritionInfo) {
+      try {
+        const entry = {
+          userId: userData.googleId,
+          mealType: selectedMealType,
+          calories: nutritionInfo.calories,
+          description: description || nutritionInfo.name,
+          nutritionInfo: {
+            protein_g: nutritionInfo.protein_g,
+            carbohydrates_total_g: nutritionInfo.carbohydrates_total_g,
+            fat_total_g: nutritionInfo.fat_total_g,
+            fiber_g: nutritionInfo.fiber_g,
+            sugar_g: nutritionInfo.sugar_g
+          }
+        };
+
+        await createDietEntry(entry);
+        await fetchDailyEntries();
+        
+        setShowForm(false);
+        setNutritionInfo(null);
+        setDescription('');
+        setSelectedMealType('breakfast');
+      } catch (error) {
+        console.error('Error adding meal entry:', error);
+      }
+    }
   };
 
-  const dailyTotals = calculateDailyTotals();
+  const handleDeleteEntry = async (entryId) => {
+    try {
+      await deleteDietEntry(entryId);
+      await fetchDailyEntries();
+    } catch (error) {
+      console.error('Error deleting entry:', error);
+    }
+  };
+
+  if (showPlanSelection) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#C9E4CA] via-[#87BBA2] to-[#55828B]">
+        <Navbar />
+        <div className="container mx-auto p-6">
+          <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-xl p-6">
+            <h2 className="text-2xl font-bold text-[#364958] mb-6">Choose Your Diet Plan</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {DIET_PLANS.map(plan => (
+                <DietPlanCard
+                  key={plan.id}
+                  {...plan}
+                  onClick={() => handlePlanSelect(plan)}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#C9E4CA] via-[#87BBA2] to-[#55828B]">
       <Navbar />
       <div className="container mx-auto p-6 space-y-6">
-        <div className="bg-white/90 rounded-lg shadow-xl p-6">
+        <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-xl p-6">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-[#364958]">Diet Tracker</h2>
+            <div>
+              <h2 className="text-2xl font-bold text-[#364958]">Diet Tracker</h2>
+              <CaloriesSummary
+                consumedCalories={consumedCalories}
+                targetCalories={selectedPlan.calories}
+              />
+            </div>
             <button
               onClick={() => setShowForm(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-[#55828B] text-white rounded-lg hover:bg-[#446870] transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#55828B] to-[#3B6064] text-white rounded-lg hover:opacity-90 transition-all duration-200 shadow-md hover:shadow-lg"
             >
               <Plus className="w-5 h-5" />
               Add Meal
             </button>
           </div>
 
-          {/* Daily Summary */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-[#55828B] p-4 rounded-lg text-white">
-              <h3 className="text-lg font-semibold mb-2">Calories</h3>
-              <p>{Math.round(dailyTotals.calories)} kcal</p>
-            </div>
-            <div className="bg-[#55828B] p-4 rounded-lg text-white">
-              <h3 className="text-lg font-semibold mb-2">Protein</h3>
-              <p>{Math.round(dailyTotals.protein)}g</p>
-            </div>
-            <div className="bg-[#55828B] p-4 rounded-lg text-white">
-              <h3 className="text-lg font-semibold mb-2">Carbs</h3>
-              <p>{Math.round(dailyTotals.carbs)}g</p>
-            </div>
-            <div className="bg-[#55828B] p-4 rounded-lg text-white">
-              <h3 className="text-lg font-semibold mb-2">Fat</h3>
-              <p>{Math.round(dailyTotals.fat)}g</p>
-            </div>
-          </div>
-
-          {/* Add Meal Form */}
           {showForm && (
-            <div className="bg-white/90 rounded-lg shadow-xl p-6 mb-6">
-              <h3 className="text-xl font-semibold mb-4">Add New Meal</h3>
+            <div className="bg-gradient-to-br from-white to-[#F8FAFC] rounded-lg shadow-lg p-6 mb-6 border border-[#E2E8F0]">
+              <h3 className="text-xl font-semibold text-[#364958] mb-4">Add New Meal</h3>
               <div className="space-y-4">
                 <div className="flex gap-4">
-                  <NutritionSearch onFoodSelect={handleFoodSelect} />
+                  <NutritionSearch onFoodSelect={setNutritionInfo} />
                   <div className="text-gray-500">- OR -</div>
-                  <ImageAnalyzer onFoodDetected={handleFoodDetected} />
+                  <ImageAnalyzer onFoodDetected={setNutritionInfo} />
                 </div>
 
                 {nutritionInfo && (
@@ -117,13 +160,13 @@ export default function DietPlan() {
                     <NutritionDisplay nutritionInfo={nutritionInfo} />
                     <div className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-[#364958] mb-1">
                           Meal Type
                         </label>
                         <select
                           value={selectedMealType}
                           onChange={(e) => setSelectedMealType(e.target.value)}
-                          className="w-full p-2 border rounded-md"
+                          className="w-full p-2 border rounded-md focus:ring-2 focus:ring-[#55828B] focus:border-transparent bg-white"
                         >
                           <option value="breakfast">Breakfast</option>
                           <option value="lunch">Lunch</option>
@@ -132,7 +175,7 @@ export default function DietPlan() {
                         </select>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-[#364958] mb-1">
                           Description (optional)
                         </label>
                         <input
@@ -140,19 +183,19 @@ export default function DietPlan() {
                           value={description}
                           onChange={(e) => setDescription(e.target.value)}
                           placeholder="Add notes about your meal..."
-                          className="w-full p-2 border rounded-md"
+                          className="w-full p-2 border rounded-md focus:ring-2 focus:ring-[#55828B] focus:border-transparent bg-white"
                         />
                       </div>
                       <div className="flex justify-end gap-4">
                         <button
                           onClick={() => setShowForm(false)}
-                          className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                          className="px-4 py-2 text-[#364958] hover:bg-gray-100 rounded-md transition-colors"
                         >
                           Cancel
                         </button>
                         <button
                           onClick={handleAddEntry}
-                          className="px-4 py-2 bg-[#55828B] text-white rounded-md hover:bg-[#446870]"
+                          className="px-4 py-2 bg-gradient-to-r from-[#55828B] to-[#3B6064] text-white rounded-md hover:opacity-90 transition-all duration-200 shadow-md hover:shadow-lg"
                         >
                           Add Entry
                         </button>
@@ -164,36 +207,13 @@ export default function DietPlan() {
             </div>
           )}
 
-          {/* Meal Entries */}
           <div className="space-y-4">
             {mealEntries.map((entry) => (
-              <div
-                key={entry.id}
-                className="bg-white rounded-lg shadow p-4 flex justify-between items-center"
-              >
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-gray-500 capitalize">
-                      {entry.mealType}
-                    </span>
-                    <span className="text-lg font-semibold">
-                      {entry.description || entry.nutritionInfo.name}
-                    </span>
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    {entry.nutritionInfo.calories} kcal | 
-                    Protein: {entry.nutritionInfo.protein_g}g | 
-                    Carbs: {entry.nutritionInfo.carbohydrates_total_g}g | 
-                    Fat: {entry.nutritionInfo.fat_total_g}g
-                  </div>
-                </div>
-                <button
-                  onClick={() => handleDeleteEntry(entry.id)}
-                  className="text-red-500 hover:text-red-700"
-                >
-                  <Trash2 className="w-5 h-5" />
-                </button>
-              </div>
+              <MealEntry
+                key={entry._id}
+                entry={entry}
+                onDelete={handleDeleteEntry}
+              />
             ))}
           </div>
         </div>
