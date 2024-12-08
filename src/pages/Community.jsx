@@ -202,14 +202,14 @@ export default function Community() {
             <div className="grid md:grid-cols-2 gap-6 mx-[8%]">
               <ChallengeCard 
                 title="30-Day Fitness Challenge" 
-                participants={150}
+                participants={0}
                 difficulty="Intermediate"
                 reward="Rs-5000 Gift Card"
                 daysLeft={25}
               />
               <ChallengeCard 
                 title="7-Days Fitness Challenge" 
-                participants={200}
+                participants={0}
                 difficulty="Advanced"
                 reward="Tech Gadget Pack"
                 daysLeft={18}
