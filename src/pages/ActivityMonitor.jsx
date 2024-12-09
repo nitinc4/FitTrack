@@ -174,7 +174,7 @@ function ActivityMonitor() {
     },
     {
       label: 'Active Days',
-      value: fitnessData.weekly?.activeDays || 0,
+      value: (fitnessData.weekly?.activeDays -1) || 0,
       max: 7,
       color: '#364958',
       icon: <Calendar size={24} />

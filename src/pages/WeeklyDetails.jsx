@@ -132,7 +132,7 @@ export default function WeeklyDetails() {
     { 
       icon: <Calendar size={24} />, 
       label: 'Active Days', 
-      value: activeDays, 
+      value: (activeDays-1), 
       max: 7, 
       color: '#364958' 
     },
