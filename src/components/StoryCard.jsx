@@ -34,7 +34,7 @@ export default function StoryCard({
     <div className="bg-gradient-to-br from-white to-gray-100 rounded-2xl shadow-lg mb-8 overflow-hidden max-w-[462px] mx-auto transform transition-all duration-300 hover:scale-[1.02] hover:shadow-xl">
       <div className="p-6">
         <div className="flex items-center gap-4 mb-5">
-          <div className="w-12 h-12 rounded-full bg-gradient-to-r from-[#55828B] to-[#3B6064] flex items-center justify-center text-white text-lg font-bold shadow-md">
+          <div className="w-12 h-12 rounded-full bg-gradient-to-r from-[#3B6064] to-[#5C7E81] flex items-center justify-center text-white text-lg font-bold shadow-md">
             {author[0]}
           </div>
           <div>

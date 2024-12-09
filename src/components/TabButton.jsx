@@ -1,11 +1,13 @@
-import React,{usestae} from 'react';
+import React from 'react';
 
 export default function TabButton({ active, onClick, children }) {
   return (
     <button
       onClick={onClick}
       className={`px-6 py-2 rounded-md transition-all ${
-        active ? 'bg-blue-500 text-white' : 'hover:bg-blue-50'
+        active 
+          ? 'bg-[#55828B] text-white hover:bg-[#3B6064]' 
+          : 'text-[#364958] hover:bg-[#C9E4CA]/20'
       }`}
     >
       {children}

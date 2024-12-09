@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Camera } from 'lucide-react';
+import { Camera, Plus } from 'lucide-react';
 import TabButton from '../components/TabButton';
 import StoryCard from '../components/StoryCard';
 import ChallengeCard from '../components/ChallengeCard';
 import ReviewCard from '../components/ReviewCard';
 import Navbar from '../components/Navbar';
+import CreateChallengeModal from '../components/CreateChallengeModal';
 import { createPost, getPosts, toggleLike } from '../services/postService';
 import { createReview, getReviews } from '../services/reviewService';
+import { createChallenge, getChallenges, joinChallenge } from '../services/challengeService';
 
 export default function Community() {
   const [activeTab, setActiveTab] = useState('stories');
@@ -16,6 +18,8 @@ export default function Community() {
   const [selectedRating, setSelectedRating] = useState(0);
   const [posts, setPosts] = useState([]);
   const [reviews, setReviews] = useState([]);
+  const [challenges, setChallenges] = useState([]);
+  const [showChallengeModal, setShowChallengeModal] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const userData = JSON.parse(localStorage.getItem('userData'));
@@ -23,6 +27,7 @@ export default function Community() {
   useEffect(() => {
     fetchPosts();
     fetchReviews();
+    fetchChallenges();
   }, []);
 
   const fetchPosts = async () => {
@@ -42,6 +47,15 @@ export default function Community() {
       setReviews(fetchedReviews);
     } catch (error) {
       console.error('Error fetching reviews:', error);
+    }
+  };
+
+  const fetchChallenges = async () => {
+    try {
+      const fetchedChallenges = await getChallenges();
+      setChallenges(fetchedChallenges);
+    } catch (error) {
+      console.error('Error fetching challenges:', error);
     }
   };
 
@@ -81,6 +95,35 @@ export default function Community() {
     }
   };
 
+  const handleCreateChallenge = async (challengeData) => {
+    try {
+      const newChallenge = {
+        ...challengeData,
+        creator: {
+          googleId: userData.googleId,
+          name: userData.name
+        }
+      };
+      await createChallenge(newChallenge);
+      await fetchChallenges();
+      setShowChallengeModal(false);
+    } catch (error) {
+      console.error('Error creating challenge:', error);
+    }
+  };
+
+  const handleJoinChallenge = async (challengeId) => {
+    try {
+      await joinChallenge(challengeId, {
+        googleId: userData.googleId,
+        name: userData.name
+      });
+      await fetchChallenges();
+    } catch (error) {
+      console.error('Error joining challenge:', error);
+    }
+  };
+
   const handleLike = async (postId) => {
     try {
       await toggleLike(postId, userData.googleId);
@@ -117,13 +160,12 @@ export default function Community() {
     await fetchPosts();
   };
 
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#C9E4CA] via-[#87BBA2] to-[#55828B]">
       <Navbar />
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-center mb-8">
-          <div className="bg-white rounded-lg shadow-lg p-2 inline-flex gap-2">
+          <div className="bg-white/90 rounded-lg shadow-lg p-2 inline-flex gap-2">
             <TabButton
               active={activeTab === 'stories'}
               onClick={() => setActiveTab('stories')}
@@ -147,7 +189,7 @@ export default function Community() {
 
         {activeTab === 'stories' && (
           <div className="mx-[8%] space-y-4">
-            <div className="bg-gradient-to-br from-[#C9E4CA] via-[#87BBA2] to-[#55828B] rounded-xl shadow-lg p-6">
+            <div className="bg-[#E3F2E4] rounded-xl shadow-lg p-6">
               <div className="flex items-center gap-4 mb-6">
                 <div className="relative group">
                   <input
@@ -159,7 +201,7 @@ export default function Community() {
                   />
                   <label
                     htmlFor="media-upload"
-                    className="flex items-center gap-2 cursor-pointer bg-blue-50 hover:bg-blue-100 text-blue-600 px-4 py-2 rounded-lg transition-colors"
+                    className="flex items-center gap-2 cursor-pointer bg-[#55828B] hover:bg-[#3B6064] text-white px-4 py-2 rounded-lg transition-colors"
                   >
                     <Camera className="w-5 h-5" />
                     <span>Photo/Video</span>
@@ -170,11 +212,11 @@ export default function Community() {
                   value={postContent}
                   onChange={(e) => setPostContent(e.target.value)}
                   placeholder="Share your fitness journey..."
-                  className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#55828B]"
                 />
                 <button 
                   onClick={handlePost}
-                  className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                  className="bg-[#55828B] text-white px-6 py-2 rounded-lg hover:bg-[#3B6064] transition-colors"
                 >
                   Post
                 </button>
@@ -198,30 +240,40 @@ export default function Community() {
             </div>
           </div>
         )}
+
         {activeTab === 'challenges' && (
-            <div className="grid md:grid-cols-2 gap-6 mx-[8%]">
-              <ChallengeCard 
-                title="30-Day Fitness Challenge" 
-                participants={0}
-                difficulty="Intermediate"
-                reward="Rs-5000 Gift Card"
-                daysLeft={25}
-              />
-              <ChallengeCard 
-                title="7-Days Fitness Challenge" 
-                participants={0}
-                difficulty="Advanced"
-                reward="Tech Gadget Pack"
-                daysLeft={18}
-              
-              />
+          <div className="mx-[8%]">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-white">Active Challenges</h2>
+              <button
+                onClick={() => setShowChallengeModal(true)}
+                className="flex items-center gap-2 bg-[#55828B] text-white px-4 py-2 rounded-lg hover:bg-[#3B6064] transition-colors"
+              >
+                <Plus className="w-5 h-5" />
+                Create Challenge
+              </button>
             </div>
-          )}
+            <div className="grid md:grid-cols-2 gap-6">
+              {challenges.map((challenge) => (
+                <ChallengeCard
+                  key={challenge._id}
+                  title={challenge.title}
+                  participants={challenge.participants.length}
+                  difficulty={challenge.difficulty}
+                  reward={challenge.reward}
+                  daysLeft={Math.ceil((new Date(challenge.endDate) - new Date()) / (1000 * 60 * 60 * 24))}
+                  joined={challenge.participants.some(p => p.googleId === userData.googleId)}
+                  onJoin={() => handleJoinChallenge(challenge._id)}
+                />
+              ))}
+            </div>
+          </div>
+        )}
 
         {activeTab === 'reviews' && (
-          <div className="space-y-6">
-            <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-              <h3 className="font-bold text-xl mb-4">Share Your Experience</h3>
+          <div className="mx-[8%] space-y-6">
+            <div className="bg-white/90 rounded-xl shadow-lg p-6 mb-6">
+              <h3 className="font-bold text-xl mb-4 text-[#364958]">Share Your Experience</h3>
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   {[1, 2, 3, 4, 5].map((star) => (
@@ -240,12 +292,12 @@ export default function Community() {
                   value={reviewText}
                   onChange={(e) => setReviewText(e.target.value)}
                   placeholder="Write your review..."
-                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#55828B]"
                   rows={4}
                 />
                 <button 
                   onClick={handleSubmitReview}
-                  className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                  className="bg-[#55828B] text-white px-6 py-2 rounded-lg hover:bg-[#3B6064] transition-colors"
                 >
                   Submit Review
                 </button>
@@ -264,6 +316,13 @@ export default function Community() {
           </div>
         )}
       </div>
+      
+      {showChallengeModal && (
+        <CreateChallengeModal
+          onClose={() => setShowChallengeModal(false)}
+          onSubmit={handleCreateChallenge}
+        />
+      )}
     </div>
   );
 }
