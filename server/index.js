@@ -1,11 +1,11 @@
 import express from 'express';
-import cors from 'cors';
-import dotenv from 'dotenv';
-import mongoose from 'mongoose';
 import session from 'express-session';
 import MongoStore from 'connect-mongo';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
+
+// Routes
 import userRoutes from './routes/userRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import imageRoutes from './routes/imageRoutes.js';
@@ -14,8 +14,12 @@ import reviewRoutes from './routes/reviewRoutes.js';
 import challengeRoutes from './routes/challengeRoutes.js';
 import dietRoutes from './routes/dietRoutes.js';
 import workoutRoutes from './routes/workoutRoutes.js';
+
+// Middleware and Config
 import { errorHandler } from './middleware/errorHandler.js';
+import { corsMiddleware, helmetMiddleware, cspMiddleware } from './middleware/security/index.js';
 import connectDatabase from './config/database.js';
+import sessionConfig from './config/security/sessionConfig.js';
 
 dotenv.config();
 
@@ -24,14 +28,10 @@ const PORT = process.env.PORT || 3000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const isDevelopment = process.env.NODE_ENV !== 'production';
-
-app.use(
-  cors({
-    origin: isDevelopment ? 'http://localhost:5173' : process.env.CLIENT_URL,
-    credentials: true,
-  })
-);
+// Apply security middlewares
+app.use(helmetMiddleware);
+app.use(corsMiddleware);
+app.use(cspMiddleware);
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
@@ -40,23 +40,13 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 const dbConnection = await connectDatabase();
 
 // Session configuration
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET || 'your-secret-key',
-    resave: false,
-    saveUninitialized: true,
-    store: MongoStore.create({
-      client: dbConnection.connection.getClient(),
-      collectionName: 'sessions',
-      ttl: 24 * 60 * 60, // 1 day
-    }),
-    cookie: {
-      secure: !isDevelopment,
-      sameSite: isDevelopment ? 'lax' : 'none',
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    },
-  })
-);
+const mongoStore = MongoStore.create({
+  client: dbConnection.connection.getClient(),
+  collectionName: 'sessions',
+  ttl: 24 * 60 * 60 // 1 day
+});
+
+app.use(session(sessionConfig(mongoStore)));
 
 // Serve uploaded files
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));

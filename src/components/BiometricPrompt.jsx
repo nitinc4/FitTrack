@@ -1,6 +1,99 @@
 import React, { useState } from 'react';
 import { Fingerprint, Loader } from 'lucide-react';
 import { startAuthentication } from '@simplewebauthn/browser';
+import styled from 'styled-components';
+
+const OverlayContainer = styled.div`
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(201, 228, 202, 0.95), rgba(135, 187, 162, 0.95), rgba(85, 130, 139, 0.95));
+  backdrop-filter: blur(8px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+`;
+
+const PromptCard = styled.div`
+  background: rgba(255, 255, 255, 0.95);
+  width: 220px; /* Reduced width */
+  height: 220px; /* Reduced height */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 1rem; /* Reduced padding */
+`;
+
+const Title = styled.h2`
+  font-size: 1rem;
+  font-weight: bold;
+  color: #364958;
+  margin-bottom: 0.5rem;
+`;
+
+const Description = styled.p`
+  font-size: 0.875rem;
+  color: #4B5563;
+  margin-bottom: 1rem;
+`;
+
+const ButtonContainer = styled.div`
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+`;
+
+const VerifyButton = styled.button`
+  background: #55828B;
+  color: white;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  flex: 1;
+  font-size: 0.875rem;
+  transition: transform 0.2s;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+`;
+
+const CancelButton = styled.button`
+  background: #f3f4f6;
+  color: #4B5563;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  transition: background-color 0.2s;
+
+  &:hover:not(:disabled) {
+    background-color: #e0e7ff;
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+`;
+
+const ErrorMessage = styled.div`
+  background-color: #FEE2E2;
+  color: #B91C1C;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+`;
 
 export default function BiometricPrompt({ onSuccess, onCancel }) {
   const [loading, setLoading] = useState(false);
@@ -13,24 +106,21 @@ export default function BiometricPrompt({ onSuccess, onCancel }) {
 
       const userData = JSON.parse(localStorage.getItem('userData'));
 
-      // Get authentication options from server
       const optionsRes = await fetch(`http://localhost:3000/api/auth/authenticate/${userData.googleId}/challenge`, {
         method: 'POST',
-        credentials: 'include'
+        credentials: 'include',
       });
       const options = await optionsRes.json();
 
-      // Start authentication process
       const credential = await startAuthentication(options);
 
-      // Verify authentication with server
       const verificationRes = await fetch(`http://localhost:3000/api/auth/authenticate/${userData.googleId}/verify`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ credential }),
-        credentials: 'include'
+        credentials: 'include',
       });
 
       const verification = await verificationRes.json();
@@ -49,41 +139,23 @@ export default function BiometricPrompt({ onSuccess, onCancel }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full">
-        <h2 className="text-xl font-bold text-[#364958] mb-4">Biometric Authentication Required</h2>
-        <p className="text-gray-600 mb-6">
+    <OverlayContainer>
+      <PromptCard>
+        <Title>Biometric Authentication</Title>
+        <Description>
           Please verify your identity using your device's biometric authentication.
-        </p>
+        </Description>
 
-        {error && (
-          <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg">
-            {error}
-          </div>
-        )}
+        {error && <ErrorMessage>{error}</ErrorMessage>}
 
-        <div className="flex gap-4">
-          <button
-            onClick={handleAuthenticate}
-            disabled={loading}
-            className="flex-1 flex items-center justify-center gap-2 bg-[#55828B] text-white py-3 rounded-lg hover:bg-[#3B6064] transition-colors disabled:opacity-50"
-          >
-            {loading ? (
-              <Loader className="w-5 h-5 animate-spin" />
-            ) : (
-              <Fingerprint className="w-5 h-5" />
-            )}
-            {loading ? 'Verifying...' : 'Verify Identity'}
-          </button>
-          <button
-            onClick={onCancel}
-            disabled={loading}
-            className="px-6 py-3 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            Cancel
-          </button>
-        </div>
-      </div>
-    </div>
+        <ButtonContainer>
+          <VerifyButton onClick={handleAuthenticate} disabled={loading}>
+            {loading ? <Loader className="w-5 h-5 animate-spin" /> : <Fingerprint className="w-5 h-5" />}
+            {loading ? 'Verifying...' : 'Verify'}
+          </VerifyButton>
+          <CancelButton onClick={onCancel} disabled={loading}>Cancel</CancelButton>
+        </ButtonContainer>
+      </PromptCard>
+    </OverlayContainer>
   );
 }
