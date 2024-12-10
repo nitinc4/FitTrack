@@ -20,6 +20,20 @@ const userSchema = new mongoose.Schema({
   weight: Number,
   height: Number,
   goals: String,
+  mfaEnabled: {
+    type: Boolean,
+    default: false
+  },
+  currentChallenge: {
+    type: String,
+    default: null
+  },
+  authenticator: {
+    credentialID: Buffer,
+    credentialPublicKey: Buffer,
+    counter: Number,
+    transports: [String]
+  },
   createdAt: {
     type: Date,
     default: Date.now

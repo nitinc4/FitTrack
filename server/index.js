@@ -2,10 +2,12 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
-import axios from 'axios';
+import session from 'express-session';
+import MongoStore from 'connect-mongo';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import userRoutes from './routes/userRoutes.js';
+import authRoutes from './routes/authRoutes.js';
 import imageRoutes from './routes/imageRoutes.js';
 import postRoutes from './routes/postRoutes.js';
 import reviewRoutes from './routes/reviewRoutes.js';
@@ -22,9 +24,11 @@ const PORT = process.env.PORT || 3000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const isDevelopment = process.env.NODE_ENV !== 'production';
+
 app.use(
   cors({
-    origin: 'http://localhost:5173',
+    origin: isDevelopment ? 'http://localhost:5173' : process.env.CLIENT_URL,
     credentials: true,
   })
 );
@@ -32,12 +36,34 @@ app.use(
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
+// Initialize database connection
+const dbConnection = await connectDatabase();
+
+// Session configuration
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || 'your-secret-key',
+    resave: false,
+    saveUninitialized: true,
+    store: MongoStore.create({
+      client: dbConnection.connection.getClient(),
+      collectionName: 'sessions',
+      ttl: 24 * 60 * 60, // 1 day
+    }),
+    cookie: {
+      secure: !isDevelopment,
+      sameSite: isDevelopment ? 'lax' : 'none',
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    },
+  })
+);
+
 // Serve uploaded files
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
-connectDatabase();
-
+// Routes
 app.use('/api/users', userRoutes);
+app.use('/api/auth', authRoutes);
 app.use('/api', imageRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/reviews', reviewRoutes);
@@ -47,36 +73,6 @@ app.use('/api/diet', dietRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
-});
-
-app.post('/api/clarifai', async (req, res) => {
-  try {
-    const { base64 } = req.body;
-    const clarifaiResponse = await axios.post(
-      'https://api.clarifai.com/v2/models/bd367be194cf45149e75f01d59f77ba7/outputs',
-      {
-        inputs: [
-          {
-            data: {
-              image: {
-                base64,
-              },
-            },
-          },
-        ],
-      },
-      {
-        headers: {
-          'Authorization': `Key ${process.env.CLARIFAI_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-    res.status(200).json(clarifaiResponse.data);
-  } catch (error) {
-    console.error('Clarifai API error:', error.message);
-    res.status(error.response?.status || 500).json({ error: error.message });
-  }
 });
 
 app.use(errorHandler);

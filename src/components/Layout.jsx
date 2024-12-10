@@ -3,6 +3,8 @@ import { Outlet, Navigate, useLocation } from 'react-router-dom';
 import Navbar from './Navbar';
 import GoogleAuth from './GoogleAuth';
 import OnboardingForm from './OnboardingForm';
+import BiometricSetup from './BiometricSetup';
+import BiometricPrompt from './BiometricPrompt';
 import styled from 'styled-components';
 import axios from 'axios';
 
@@ -28,6 +30,8 @@ const AuthContainer = styled.div`
 const Layout = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
+  const [needsBiometricSetup, setNeedsBiometricSetup] = useState(false);
+  const [showBiometricPrompt, setShowBiometricPrompt] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const location = useLocation();
 
@@ -48,9 +52,14 @@ const Layout = () => {
         const response = await axios.get(`http://localhost:3000/api/users/${googleId}`);
         const user = response.data.data;
         
-        // Check if any of the required fields are missing
         const needsOnboarding = !user.age || !user.weight || !user.height || !user.goals;
         setNeedsOnboarding(needsOnboarding);
+        
+        if (!needsOnboarding && !user.mfaEnabled) {
+          setNeedsBiometricSetup(true);
+        } else if (!needsOnboarding && user.mfaEnabled) {
+          setShowBiometricPrompt(true);
+        }
       } catch (error) {
         console.error('Error checking user profile:', error);
         setNeedsOnboarding(true);
@@ -61,6 +70,15 @@ const Layout = () => {
 
     checkUserProfile();
   }, []);
+
+  const handleBiometricSetupComplete = () => {
+    setNeedsBiometricSetup(false);
+    setShowBiometricPrompt(true);
+  };
+
+  const handleBiometricSuccess = () => {
+    setShowBiometricPrompt(false);
+  };
 
   if (isLoading) {
     return (
@@ -86,6 +104,29 @@ const Layout = () => {
 
   if (needsOnboarding) {
     return <OnboardingForm />;
+  }
+
+  if (needsBiometricSetup) {
+    return (
+      <PageContainer>
+        <Navbar />
+        <div className="container mx-auto max-w-md mt-10">
+          <BiometricSetup onSetupComplete={handleBiometricSetupComplete} />
+        </div>
+      </PageContainer>
+    );
+  }
+
+  if (showBiometricPrompt) {
+    return (
+      <BiometricPrompt
+        onSuccess={handleBiometricSuccess}
+        onCancel={() => {
+          localStorage.removeItem('googleToken');
+          window.location.reload();
+        }}
+      />
+    );
   }
 
   if (location.pathname === '/') {
