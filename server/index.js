@@ -21,6 +21,13 @@ import { corsMiddleware, helmetMiddleware, cspMiddleware } from './middleware/se
 import connectDatabase from './config/database.js';
 import sessionConfig from './config/security/sessionConfig.js';
 
+const app = express()
+app.use(cors(
+  {
+    origin:[""],
+    methods:[POST,GET],
+    credentials:true
+  }
 dotenv.config();
 
 const app = express();
