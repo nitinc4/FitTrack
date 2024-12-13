@@ -21,10 +21,10 @@ import { corsMiddleware, helmetMiddleware, cspMiddleware } from './middleware/se
 import connectDatabase from './config/database.js';
 import sessionConfig from './config/security/sessionConfig.js';
 
-const app = express()
+
 app.use(cors(
   {
-    origin:["https://fittrack-fitnesstracker.vercel.app"],
+    origin:[""],
     methods:[POST,GET],
     credentials:true
   }
