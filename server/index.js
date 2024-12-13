@@ -28,6 +28,7 @@ app.use(cors(
     methods:[POST,GET],
     credentials:true
   }
+));
 dotenv.config();
 
 const app = express();
