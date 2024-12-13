@@ -21,6 +21,8 @@ import { corsMiddleware, helmetMiddleware, cspMiddleware } from './middleware/se
 import connectDatabase from './config/database.js';
 import sessionConfig from './config/security/sessionConfig.js';
 
+
+
 dotenv.config();
 
 const app = express();
