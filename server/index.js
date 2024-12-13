@@ -24,7 +24,7 @@ import sessionConfig from './config/security/sessionConfig.js';
 const app = express()
 app.use(cors(
   {
-    origin:[""],
+    origin:["https://fittrack-fitnesstracker.vercel.app/"],
     methods:[POST,GET],
     credentials:true
   }
