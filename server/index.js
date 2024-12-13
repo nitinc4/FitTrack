@@ -22,17 +22,8 @@ import connectDatabase from './config/database.js';
 import sessionConfig from './config/security/sessionConfig.js';
 
 
-app.use(cors(
-  {
-    origin:[""],
-    methods:[POST,GET],
-    credentials:true
-  }
-));
-
 dotenv.config();
 
-mongoose.connect('mongodb+srv://nitinc3114:Ncr3114@cluster0.nqipl.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
