@@ -1,4 +1,4 @@
-This is a MERN stack web application which brings all your fitness needs into a single app, it gathers your fitness data such as step count, calorie cout, average heart rate, sleep data from your smart watch or any google fit comatible device [for it to work as intended please install google fit on your phone prior to logging in].
+This is a MERN stack web application which brings all your fitness needs into a single app. It gathers your fitness data such as step count, calorie count, average heart rate, and sleep data from your smart watch or any Google Fit-compatible device. To ensure this app works as intended, please install Google Fit on your phone before logging in.
 
 This app also contains a calorie tracker so you can keep track of your calorie intake and follow a diet plan to best fit your fitness needs, a built-in calorie finder finds nutritional information for the food consumed either a picture of the food or the name can be used to fetch the nutritional values.
 
